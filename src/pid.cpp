@@ -1,4 +1,11 @@
 #include <pid.h>
+double Pid::Kp[4] = {1, 1, 1, 1};
+double Pid::Ki[4] = {1, 1, 1, 1};
+double Pid::target[4] = {0};
+double Pid::deviation[4][100] = {{1}, {1}, {1}, {1}};
+int32_t Pid::lori_tmp[4] = {0};
+unsigned long Pid::time_tmp[4] = {0};
+double Pid::output[4] = {0};
 
 void Pid::Update(uint8_t loli, double deviation[100], double (*callback)(int32_t))
 {
@@ -47,8 +54,9 @@ void Pid::Run(void (*MDx)(int, int))
     */
     constexpr int i = 0;
     Update(0, deviation[i], Callback);
-    PidLogic(Kp[i], Ki[i], deviation[i][99], output[i], deviation[i]);
-    MDx(1, (int)output[0]);
+    //    PidLogic(Kp[i], Ki[i], deviation[i][99], Pid::output[i], Pid::deviation[i]);
+    output[0] = 100;
+    MDx(1, (int)Pid::output[0]);
 }
 
 double Pid::Callback(int32_t loli)

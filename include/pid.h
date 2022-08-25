@@ -1,13 +1,12 @@
 #pragma once
 #include <Encoder.h>
-#include <pid.h>
 #include <Driver.h>
 
 namespace Pid
 {
 
-    double Kp[4] = {1, 1, 1, 1};
-    double Ki[4] = {1, 1, 1, 1};
+    extern double Kp[4];
+    extern double Ki[4];
     /*
     double r = 0;
     double x = 0;
@@ -17,16 +16,16 @@ namespace Pid
     constexpr int lori_resolution = 1;
 
     // target speed
-    double target[4] = {0};
+    extern double target[4];
     // deviation
-    double deviation[4][100] = {{1}, {1}, {1}, {1}};
+    extern double deviation[4][100];
     // old lori tmp
-    int32_t lori_tmp[4] = {0};
+    extern int32_t lori_tmp[4];
     // old time tmp
-    unsigned long time_tmp[4] = {0};
+    extern unsigned long time_tmp[4];
     // output value
-    double output[4] = {0};
-//    short (*readenc)(unsigned int enc);
+    extern double output[4];
+    //    short (*readenc)(unsigned int enc);
 
     /*
     // initialize
