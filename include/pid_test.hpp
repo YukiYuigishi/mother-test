@@ -6,7 +6,8 @@ class PidTest
 private:
     /* data */
 
-    int mdId_;
+    const int mdId_;
+
     int64_t lolicon_tmp_ = 0;
     int32_t time_tmp_ = 0;
     //現在の出力値 x(t) 現在の
@@ -21,16 +22,13 @@ private:
 
     const double ki_ = 1;
     const double kp_ = 1;
-    //  const double kd_ = 1;
+    const double kd_ = 1;
 
     void Pid();
     void Update();
 
 public:
-    PidTest(int mdid)
-    {
-        mdId_ = mdid;
-    }
+    PidTest(const int mdId_, const double ki_, const double kp_, const double kd_) : mdId_(mdId_), ki_(ki_), kp_(kp_), kd_(kd_) {}
     ~PidTest();
     double Run();
     void SetTarget(int rotation);
