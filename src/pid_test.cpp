@@ -4,12 +4,10 @@
 
 PidTest::~PidTest() {}
 
-void PidTest::Pid()
-{
+void PidTest::Pid() {
 
   double deviation_sum = 0;
-  for (double *i = deviation_; i != deviation_ + 100; i++)
-  {
+  for (double *i = deviation_; i != deviation_ + 100; i++) {
     deviation_sum += *i;
   }
   Serial.printf("sum:%lf\n", deviation_sum);
@@ -17,30 +15,30 @@ void PidTest::Pid()
   output_ = kp_ * deviation_[99];
 }
 
-void PidTest::Update()
-{
+void PidTest::Update() {
 
-  for (double *i = deviation_; i != deviation_ + 99; i++)
-  {
+  for (double *i = deviation_; i != deviation_ + 99; i++) {
     *i = *(i + 1);
   }
 
   // devi /  time * 2*M_PI
-  //  deviation_[99] = (double)(Driver::lolicon_value[mdId_] - lolicon_tmp_) / 2048 / ((double)(micros() - time_tmp_) / 1000) * 2.0 * M_PI - target_;
+  //  deviation_[99] = (double)(Driver::lolicon_value[mdId_] - lolicon_tmp_) /
+  //  2048 / ((double)(micros() - time_tmp_) / 1000) * 2.0 * M_PI - target_;
 
   constexpr int bunkainou = 2048 * 4;
   constexpr double mpi2 = 2 * M_PI;
   //ここをいじる
-  deviation_[99] = (double)(Driver::lolicon_value[mdId_] - lolicon_tmp_) * mpi2 / bunkainou / ((micros() - time_tmp_) / 1000) - target_;
+  //  deviation_[99] = (double)(Driver::lolicon_value[mdId_] - lolicon_tmp_) *
+  //  mpi2 / bunkainou / ((micros() - time_tmp_) / 1000) - target_;
+  deviation_[99] = (double)(target_ - Driver::lolicon_value[mdId_]);
 
   time_tmp_ = micros();
   lolicon_tmp_ = Driver::lolicon_value[mdId_];
 }
 
-void PidTest::SetTarget(int rps) { target_ = rps * 2 * M_PI; }
+void PidTest::SetTarget(double target) { target_ = target * 800; }
 
-double PidTest::Run()
-{
+double PidTest::Run() {
   // 偏差の更新
   Update();
 

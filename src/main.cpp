@@ -14,37 +14,26 @@ void setup()
   Serial.begin(9600);
 }
 
-PidTest moter1(1, 1, 1, 1);
+// TODO
+/*
+  ロリコンの入力ではなく測距輪の入力に変更
+*/
+
+PidTest x_Axis(1, 1, 1, 1);
+PidTest y_Axis(1, 1, 1, 1);
+
 void loop()
 {
-  //  Driver::MDsetSpeed(1, 128);
+  //
 
-  //  Pid::Run(Driver::MDsetSpeed);
-  //  Serial.printf("target:%d output: %d deviation %d", Pid::target[0], Pid::output[0], Driver::lolicon_value[1]);
-  //  Driver::MDsetSpeed(1, 80);
-  //  Serial.printf("lori: %d devi: %lf\n",Driver::lolicon_value[1], Pid::deviation[99]);
-  //  int32_t loli_diff = (Driver::lolicon_value[1] > 0) ? (Driver::lolicon_value[1] - tmp) : (INT16_MAX - Driver::lolicon_value[1] + INT16_MAX - (tmp > 0) ? tmp : -tmp);
-  //  Serial.println(loli_diff);
-  // tmp = Driver::lolicon_value[1];
-  //  Serial.printf("%d :\t%d\n", micros() / 1000, Driver::lolicon_value[1]);
+  x_Axis.SetTarget(4);
+  y_Axis.SetTarget(4);
 
-  // moter1.SetTarget(3);
-  //  Driver::MDsetSpeed(1, (int)(moter1.Run()));
-  // Omni::run(20, 0);
-  // delay(700);
-  /*
-  Omni::run(20, 90);
-  delay(1000);
-  // Omni::run(20, 180);
-  // delay(700);
-  Omni::run(0, 90);
-  delay(10);
-  Omni::run(20, 270);
-  delay(1000);
-  Omni::run(0, 270);
-  delay(10);
-  // Driver::MDsetSpeed(4, 20);
-  // delay(50);
-*/
-  Driver::MDsetSpeed(4, 20);
+  double x_output = x_Axis.Run();
+  double y_output = y_Axis.Run();
+  double volume = sqrt(x_output * x_output + y_output * y_output);
+  double theta = atan(y_output / x_output);
+  Omni::run(volume, theta);
+
+  //
 }
