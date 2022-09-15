@@ -4,3 +4,6 @@
 [submodule "lib/Ps3Decorder"]
 	path = lib/Ps3Decorder
 	url = git@github.com:KurumeNCT-Robocon/Ps3Decoder.git
+[submodule "lib/old-machine-driver"]
+	path = lib/old-machine-driver
+	url = git@github.com:KurumeNCT-Robocon/old-machine-driver.git
