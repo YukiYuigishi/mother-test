@@ -1,3 +1,6 @@
 [submodule "lib/ProjectX-Driver"]
 	path = lib/ProjectX-Driver
 	url = git@github.com:KurumeNCT-Robocon/ProjectX-Driver.git
+[submodule "lib/Ps3Decoder"]
+	path = lib/Ps3Decoder
+	url = git@github.com:KurumeNCT-Robocon/Ps3Decoder.git
