@@ -1,6 +1,7 @@
 #pragma once
 #include <math.h>
 #include <Driver.h>
+#include <pid_test.hpp>
 namespace Omni
 {
 
@@ -11,18 +12,44 @@ namespace Omni
         double Y;
     };
 
+    typedef enum
+    {
+        right,
+        left
+    } Machine;
+
     typedef struct Coordinate FieldCoordinate;
     typedef struct Coordinate MachineCoordinate;
 
+    PidTest motor1(1, 14, 0, 0);
+    PidTest motor2(2, 14, 0, 0);
+    PidTest motor3(3, 14, 0, 0);
+    PidTest motor4(4, 17.25, 0, 0);
+
     //半径(mm)
     constexpr int ODOMETOR_OMNI_RADIUS = 24;
-    inline __always_inline void run(double volume, double theata)
-
+    inline __always_inline void run(double volume, double theata_rad)
     {
-        Driver::MDsetSpeed(1, volume * sin((theata)));
-        Driver::MDsetSpeed(2, volume * -cos((theata)));
-        Driver::MDsetSpeed(3, volume * -sin((theata)));
-        Driver::MDsetSpeed(4, volume * -cos((theata)));
+
+        motor1.SetTarget(volume * sin(theata_rad));
+        motor2.SetTarget(volume * -cos(theata_rad));
+        motor3.SetTarget(volume * -sin(theata_rad));
+        // 取り付けが逆になってる
+        motor4.SetTarget(volume * cos(theata_rad));
+        Driver::MDsetSpeed(1, motor1.Run());
+        Driver::MDsetSpeed(2, motor2.Run());
+        // motor2.Run();
+        // Driver::MDsetSpeed(2, 200);
+
+        Driver::MDsetSpeed(3, motor3.Run());
+
+        // Driver::MDsetSpeed(4, 200);
+        // motor4.Run();
+        Driver::MDsetSpeed(4, -motor4.Run());
+
+        Serial.printf("md2 %d\n", Driver::lolicon_value[2]);
+        Serial.printf("md4 %d\n", Driver::lolicon_value[4]);
+        Serial.println("---------------------------");
     }
 
     // theta 0 ~ 360 quotanion
@@ -76,7 +103,14 @@ namespace Omni
         return abusolute_cooordinate;
     }
 
-    inline __always_inline void rotation(double theta)
+    // direction true is right , false is  left
+    inline __always_inline void rotation(int power, bool direction)
     {
+        if (direction)
+        {
+                }
+        else
+        {
+        }
     }
 }

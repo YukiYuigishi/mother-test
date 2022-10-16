@@ -3,6 +3,8 @@
 #include <pid_test.hpp>
 #include <Ps3Decoder.h>
 #include <omni.h>
+#include <machine.h>
+#define DEBUG 0
 
 void setup()
 {
@@ -17,13 +19,14 @@ void setup()
   Serial.println("やあ、アリアルさんだよ。");
 }
 
-PidTest moter1(1, 1, 1, 1);
-
+#if DEBUG
+// release
 void loop()
 {
 
   static Ps3Decoder::Data controller = {0};
 
+  //コントローラ受信
   if (Serial8.available() > 11)
   {
     uint8_t res[12] = {0};
@@ -31,109 +34,221 @@ void loop()
     controller = Ps3Decoder::decode(res);
   }
 
-  // read odometor
-  static float imu_eular_x[10] = {0};
-  for (float *i = imu_eular_x; i != imu_eular_x + 9; i++)
+  // push start button machine enable or disable
+  static bool machine_enable[40] = {0};
+  for (bool *i = machine_enable; i < machine_enable + 39; i++)
   {
-
     *i = *(i + 1);
   }
 
-  double imu_eular_x_avg = 0;
-  for (float *i = imu_eular_x; i != imu_eular_x + 10; i++)
+  machine_enable[39] = controller.start;
+
+  // avg select
+  double machine_enable_avg = 0;
+  for (int i = 0; i < 40; i++)
   {
-    imu_eular_x_avg += *i;
+    machine_enable_avg += machine_enable[i];
   }
-  imu_eular_x_avg /= 10;
+  machine_enable_avg /= 40;
 
-  imu_eular_x[9] = Driver::IMU_eular_x;
-
-  // Serial.println(Driver::IMU_eular_x);
-
-  /*
-
-    static double odometor_theta = 0;
-    static long long int old_time = 0;
-    static long long int old_loli = 0;
-    */
-  Serial.println("------------");
-  /*
-  Serial.println(Driver::lolicon_value[5]);
-  Serial.println(Driver::lolicon_value[6]);
-  Serial.println(Driver::lolicon_value[7]);
-  Serial.println(Driver::lolicon_value[8]);
-  */
-  static uint32_t old_time = 0;
-  old_time = millis();
-  /*
-  odometor_theta += Driver::lolicon_speed_value[5] * (double)d_time / 1000.;
-
-  const int d_loli = Driver::lolicon_value[5] - old_loli; old_loli = Driver::lolicon_value[5];
-
-  const double theta = (double)Driver::lolicon_value[5] * 2.0 * M_PI / (500.0);
-  const double distance = theta * 24;
-
-  double cos45 = cos(M_PI / 4.);
-  int startOdometer = 5;
-  */
-  Omni::FieldCoordinate field = Omni::getFieldCoordinateSpeed(Driver::IMU_eular_x);
-  Serial.printf("rx: %d\n", controller.rx);
-  Serial.printf("ry: %d\n", controller.ry);
-  Serial.println(field.X);
-  Serial.println(field.Y);
-
-  // 足回り駆動
-  constexpr int controller_offset = 5;
-  constexpr int motor_speed = 1500;
-  if ((controller.rx > controller_offset || controller.rx < -controller_offset) && (controller.ry > controller_offset || controller.ry < controller_offset))
+  static bool status = false;
+  if (machine_enable_avg > 0.6)
   {
-    if (controller.rx > 0)
+    status = !status;
+    Driver::mainPowerEnable(status);
+  }
+  Serial.printf("status %d\n", status);
+
+  // IMUを滑らせる
+  static double imu_eular_x[10] = {0};
+  for (double *i = imu_eular_x; i != imu_eular_x + 9; i++)
+  {
+    *i = *(i + 1);
+  }
+
+  /*
+    double imu_eular_x_avg = 0;
+    for (double *i = imu_eular_x; i != imu_eular_x + 10; i++)
     {
-      double theta = atan((double)-controller.ry / controller.rx);
-      Serial.printf("theat %lf\n", theta);
-      Omni::run(motor_speed, theta);
+      imu_eular_x_avg += *i;
+    }
+    imu_eular_x_avg /= 10;
+
+    imu_eular_x[9] = Driver::IMU_eular_x;
+
+    // Serial.println(Driver::IMU_eular_x);
+
+
+    // 射出機構
+    if (controller.circle)
+    {
+      Serial.println("punish");
+      // Machine::arrow(7, 5, 2700, 400, 0);
+    }
+
+    // 足回り駆動
+    int controller_offset = 5;
+    constexpr int motor_speed = 100;
+
+    if ((controller.ry > 110 && controller.rx < controller_offset) || (controller.rx > 110 && controller.ry < controller_offset))
+    {
+      if (controller.ry > 110)
+      {
+      }
+    }
+    else if ((controller.rx > controller_offset || controller.rx < -controller_offset) && (controller.ry > controller_offset || controller.ry < controller_offset))
+    {
+      if (controller.rx > 0)
+      {
+        double theta = atan((double)-controller.ry / controller.rx);
+        Serial.printf("theat %lf\n", theta);
+        Omni::run(motor_speed, theta);
+      }
+      else
+      {
+        double theta = atan((double)-controller.ry / controller.rx) + M_PI;
+        Serial.printf("theat %lf\n", theta);
+        Omni::run(motor_speed, theta);
+      }
     }
     else
     {
-      double theta = atan((double)-controller.ry / controller.rx) + M_PI;
-      Serial.printf("theat %lf\n", theta);
-      Omni::run(motor_speed, theta);
+      Omni::run(0, 0);
     }
-  }
-  else
-  {
-    Omni::run(0, 0);
-  }
-
-  /*
-
-  static double odo = 0;
-  int startOdometer = 5;
-  double sin45 = sin(M_PI / 4.0);
-  // マシン座標系に変換
-  double odo0 = (-Driver::lolicon_speed_value[startOdometer]) * sin45;
-  double odo1 = (Driver::lolicon_speed_value[startOdometer + 1]) * sin45;
-  double odo2 = (Driver::lolicon_speed_value[startOdometer + 2]) * sin45;
-  double odo3 = (-Driver::lolicon_speed_value[startOdometer + 3]) * sin45;
-
-  // 平均値を積分
-  odo += (odo0 + odo1 + odo2 + odo3) * (double)d_time / (4. * 1000.);
-
-  // デバッグ
-  Serial.printf("time d %d\n", d_time);
-  Serial.printf("odo0 raw %d\n", -Driver::lolicon_value[startOdometer]);
-  Serial.printf("odo1 raw %d\n", Driver::lolicon_value[startOdometer + 1]);
-  Serial.printf("odo2 raw %d\n", Driver::lolicon_value[startOdometer + 2]);
-  Serial.printf("odo3 raw %d\n", -Driver::lolicon_value[startOdometer + 3]);
-
-  Serial.printf("odo0 %lf\n", odo0);
-  Serial.printf("odo1 %lf\n", odo1);
-  Serial.printf("odo2 %lf\n", odo2);
-  Serial.printf("odo3 %lf\n", odo3);
-  Serial.printf("avg odo %lf\n", odo);
-  Serial.printf("distance %lf\n", odo * 24. * 2);
-
-*/
+    */
+  // Serial.println(controller.start);
 
   delay(20);
 }
+
+#else
+// millsec 5000
+void arrow(int winding_motor, int weel_motor, int milli_sec, int servo_winding_arg, int servo_stop_arg)
+{
+  constexpr int power = 1000;
+  //事前の回転
+  Driver::MDsetSpeed(winding_motor, power);
+  //サーボで継手に接続
+  Driver::servoSetAngle(2, servo_winding_arg);
+  //巻取り delay
+  // millisec 5000
+  delay(milli_sec);
+  Driver::MDsetSpeed(winding_motor, 90);
+  // run weel
+  /*
+  Serial.println(Driver::SW[1]);
+  while (!Driver::SW[1])
+  {
+    Driver::MDsetSpeed(weel_motor, 260);
+  }
+  Driver::MDsetSpeed(weel_motor, 0);
+  */
+
+  Driver::MDsetSpeed(winding_motor, -100);
+  Driver::servoSetAngle(2, servo_stop_arg);
+
+  /*
+    while (Driver::SW[1])
+    {
+      Driver::MDsetSpeed(weel_motor, 300);
+    }
+    Driver::MDsetSpeed(weel_motor, 0);
+    */
+}
+void loop()
+{
+  static float imu_eular_x[10] = {0};
+  for (float *i = imu_eular_x; i != imu_eular_x + 9; i++)
+  {
+    *i = *(i + 1);
+  }
+
+  imu_eular_x[9] = Driver::IMU_eular_x;
+
+  /*
+    double imu_eular_x_avg = 0;
+    for (float *i = imu_eular_x; i != imu_eular_x + 10; i++)
+    {
+      imu_eular_x_avg += *i;
+    }
+    imu_eular_x_avg /= 10;
+    */
+
+  static bool status = false;
+  Serial.printf("imu yaw: %lf\n", Driver::IMU_eular_x);
+  Serial.printf("status: %d\n", status);
+  /*
+  if (Serial.available() > 0)
+  {
+    for (int i = 0; i < Serial.available(); i++)
+    {
+      Serial.read();
+    }
+
+    status = !status;
+  }
+  if (status)
+  {
+    Omni::run(30, M_PI/2);
+  }
+  else
+  {
+    Omni::run(30, 3.0*M_PI/2);
+  }
+  */
+
+  // Omni::run(50, 0);
+
+  /*
+    constexpr int speed = 300;
+    if (Driver::SW[1])
+    {
+      Driver::MDsetSpeed(6, 0);
+      delay(1000);
+      while (Driver::SW[1])
+      {
+        Driver::MDsetSpeed(6, speed);
+      }
+      //  Driver::MDsetSpeed(8, power);
+
+  */
+
+  /*
+  Driver::MDsetSpeed(8, power);
+  delay(3000);
+  Driver::MDsetSpeed(8, 0);
+  while (1)
+  {
+  }
+  */
+
+  //  Driver::MDsetSpeed(9, 500);
+  // arrow(8, 6, 3000);
+  /*
+  for (int i = 0; i < 1700; i += 50)
+  {
+    Driver::servoSetAngle(2, i);
+    Serial.printf("arg: %d\n", i);
+    delay(500);
+  }
+  */
+  //       en  stop
+  // Right 400, 0
+  // left  0, 850
+  Machine::arrow(8, 6, 2, 1, 3700, 0, 850);
+
+  /*
+    // wheel
+    Serial.println(Driver::SW[1]);
+    while (!Driver::SW[1])
+    {
+      Driver::MDsetSpeed(6, 300);
+    }
+    Driver::MDsetSpeed(6, 0);
+
+  */
+
+  //  Driver::MDsetSpeed(9, 1000);
+  delay(3000);
+}
+#endif
