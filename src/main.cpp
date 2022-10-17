@@ -4,7 +4,7 @@
 #include <Ps3Decoder.h>
 #include <omni.h>
 #include <machine.h>
-#define DEBUG 0
+#define DEBUG 1
 
 void setup()
 {
@@ -31,7 +31,7 @@ void loop()
   {
     uint8_t res[12] = {0};
     Serial8.readBytes(res, 12);
-    controller = Ps3Decoder::decode(res);
+    Ps3Decoder::decode(controller, res);
   }
 
   // push start button machine enable or disable
@@ -66,57 +66,77 @@ void loop()
     *i = *(i + 1);
   }
 
-  /*
-    double imu_eular_x_avg = 0;
-    for (double *i = imu_eular_x; i != imu_eular_x + 10; i++)
+  double imu_eular_x_avg = 0;
+  for (double *i = imu_eular_x; i != imu_eular_x + 10; i++)
+  {
+    imu_eular_x_avg += *i;
+  }
+  imu_eular_x_avg /= 10;
+
+  imu_eular_x[9] = Driver::IMU_eular_x;
+
+  // Serial.println(Driver::IMU_eular_x);
+
+  // 射出機構
+  if (controller.circle)
+  {
+  //  Machine::arrow(8, 6, 2, 1, 3700, 0, 850);
+    Serial.println("punish");
+  }
+
+  // 足回り駆動
+  int controller_offset = 5;
+  constexpr int motor_speed = 500;
+  // wip
+  /*if ((controller.ry > 110 && controller.rx < controller_offset) || (controller.rx > 110 && controller.ry < controller_offset))
+  {
+    if (controller.ry > 110)
     {
-      imu_eular_x_avg += *i;
     }
-    imu_eular_x_avg /= 10;
-
-    imu_eular_x[9] = Driver::IMU_eular_x;
-
-    // Serial.println(Driver::IMU_eular_x);
-
-
-    // 射出機構
-    if (controller.circle)
+  }*/
+  // offset以下の入力を無効化
+  Serial.printf("rx:%d\n", controller.rx);
+  Serial.printf("ry:%d\n", -controller.ry);
+  if ((abs(controller.rx) > controller_offset) || (abs(controller.ry) > controller_offset))
+  {
+    double theta = atan2(-controller.ry, controller.rx);
+    Serial.printf("theta %lf\n", theta);
+    Omni::run(motor_speed, theta);
+    /*
+    // 第１、第４象限
+    if (controller.rx > 0)
     {
-      Serial.println("punish");
-      // Machine::arrow(7, 5, 2700, 400, 0);
-    }
-
-    // 足回り駆動
-    int controller_offset = 5;
-    constexpr int motor_speed = 100;
-
-    if ((controller.ry > 110 && controller.rx < controller_offset) || (controller.rx > 110 && controller.ry < controller_offset))
-    {
-      if (controller.ry > 110)
-      {
-      }
-    }
-    else if ((controller.rx > controller_offset || controller.rx < -controller_offset) && (controller.ry > controller_offset || controller.ry < controller_offset))
-    {
-      if (controller.rx > 0)
-      {
-        double theta = atan((double)-controller.ry / controller.rx);
-        Serial.printf("theat %lf\n", theta);
-        Omni::run(motor_speed, theta);
-      }
-      else
-      {
-        double theta = atan((double)-controller.ry / controller.rx) + M_PI;
-        Serial.printf("theat %lf\n", theta);
-        Omni::run(motor_speed, theta);
-      }
+      double theta = atan((double)(-controller.ry) / controller.rx);
+      Serial.printf("theat %lf\n", theta);
+      Omni::run(motor_speed, theta);
     }
     else
     {
-      Omni::run(0, 0);
+
+      //第２、第３象限
+      double theta = atan((double)(-controller.ry) / controller.rx) + M_PI;
+      Serial.printf("theat %lf\n", theta);
+      Omni::run(motor_speed, theta);
     }
     */
+  }
+  else
+  {
+    Omni::run(0, 0);
+  }
+  //  Omni::run(500, M_PI / 4);
   // Serial.println(controller.start);
+
+  Serial.printf("r1 %d\n", controller.r1);
+  Serial.printf("l1 %d\n", controller.l1);
+  if (controller.r1)
+  {
+    Omni::rotation(200, true);
+  }
+  if (controller.l1)
+  {
+    Omni::rotation(200, false);
+  }
 
   delay(20);
 }
@@ -235,7 +255,7 @@ void loop()
   //       en  stop
   // Right 400, 0
   // left  0, 850
-  Machine::arrow(8, 6, 2, 1, 3700, 0, 850);
+  Serial.println(Driver::SW[1]);
 
   /*
     // wheel
@@ -249,6 +269,110 @@ void loop()
   */
 
   //  Driver::MDsetSpeed(9, 1000);
+  /*
+  while (Driver::SW[1])
+  {
+    Driver::MDsetSpeed(6, 300);
+  }
+
+  while (!Driver::SW[1])
+  {
+    Driver::MDsetSpeed(6, 300);
+  }
+  delay(100);
+  Driver::MDsetSpeed(6, 0);
   delay(3000);
+
+  while (Driver::SW[1])
+  {
+    Driver::MDsetSpeed(6, 250);
+  }
+  Driver::MDsetSpeed(6, 0);
+
+*/
+  static Ps3Decoder::Data controller = {0};
+
+  //コントローラ受信
+  /*
+  if (Serial8.available() > 11)
+  {
+    uint8_t res[12] = {0};
+    Serial8.readBytes(res, 12);
+    controller = Ps3Decoder::decode(res);
+  }
+
+  Serial.printf("circle %d\n", controller.circle);
+  if (controller.circle)
+  {
+    Machine::arrow(8, 6, 2, 1, 3700, 0, 850);
+  }
+
+  Serial.printf("cross %d\n", controller.r1);
+  if (controller.r1)
+  {
+    Machine::weel();
+    delay(500);
+  }
+  */
+  // Driver::MDsetSpeed(9, 950);
+
+  //  仰角制御 WIP
+  // const int offset_gyou = 6;
+  /*
+  if (abs(controller.ry) > offset_gyou)
+  {
+    if (controller.ry > offset_gyou)
+    {
+
+      Driver::MDsetSpeed(9, -950);
+    }
+    else
+    {
+      Driver::MDsetSpeed(9, 950);
+    }
+  }
+  */
+
+  /*
+    Serial.printf("l1 %d\n", controller.l1);
+    if (controller.l1)
+    {
+      delay(300);
+
+      while (!controller.l1)
+      {
+        if (Serial8.available() > 11)
+        {
+          uint8_t res[12] = {0};
+          Serial8.readBytes(res, 12);
+          controller = Ps3Decoder::decode(res);
+        }
+        Machine::weel2();
+      }
+    }
+    */
+  //仰角上げ
+  /*
+  while (!Driver::SW[1])
+  {
+    Driver::MDsetSpeed(6, 300);
+    if (Driver::SW[1])
+      break;
+  }
+
+  Serial.println("stop");
+  Driver::MDsetSpeed(6, 0);
+  // 動かす
+  while (Driver::SW[1])
+  {
+    Driver::MDsetSpeed(6, 250);
+    if (!Driver::SW[1])
+      break;
+  }
+  delay(300);
+  Driver::MDsetSpeed(6, 0);
+  */
+
+  delay(20);
 }
 #endif

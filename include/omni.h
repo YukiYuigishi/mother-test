@@ -31,21 +31,33 @@ namespace Omni
     inline __always_inline void run(double volume, double theata_rad)
     {
 
-        motor1.SetTarget(volume * sin(theata_rad));
-        motor2.SetTarget(volume * -cos(theata_rad));
-        motor3.SetTarget(volume * -sin(theata_rad));
-        // 取り付けが逆になってる
-        motor4.SetTarget(volume * cos(theata_rad));
-        Driver::MDsetSpeed(1, motor1.Run());
-        Driver::MDsetSpeed(2, motor2.Run());
-        // motor2.Run();
-        // Driver::MDsetSpeed(2, 200);
+        const double m1 = volume * sin(theata_rad);
+        const double m2 = volume * -cos(theata_rad);
+        const double m3 = volume * -sin(theata_rad);
+        const double m4 = volume * cos(theata_rad);
 
-        Driver::MDsetSpeed(3, motor3.Run());
+        Driver::MDsetSpeed(1, m1);
+        Driver::MDsetSpeed(2, m2);
+        Driver::MDsetSpeed(3, -m3);
+        Driver::MDsetSpeed(4, m4);
+        // PID
+        /*
+            motor1.SetTarget(volume * sin(theata_rad));
+            motor2.SetTarget(volume * -cos(theata_rad));
+            motor3.SetTarget(volume * -sin(theata_rad));
+            // 取り付けが逆になってる
+            motor4.SetTarget(volume * cos(theata_rad));
+            Driver::MDsetSpeed(1, motor1.Run());
+            Driver::MDsetSpeed(2, motor2.Run());
+            // motor2.Run();
+            // Driver::MDsetSpeed(2, 200);
 
-        // Driver::MDsetSpeed(4, 200);
-        // motor4.Run();
-        Driver::MDsetSpeed(4, -motor4.Run());
+            Driver::MDsetSpeed(3, motor3.Run());
+
+            // Driver::MDsetSpeed(4, 200);
+            // motor4.Run();
+            Driver::MDsetSpeed(4, -motor4.Run());
+        */
 
         Serial.printf("md2 %d\n", Driver::lolicon_value[2]);
         Serial.printf("md4 %d\n", Driver::lolicon_value[4]);
@@ -106,11 +118,22 @@ namespace Omni
     // direction true is right , false is  left
     inline __always_inline void rotation(int power, bool direction)
     {
+        
         if (direction)
         {
-                }
+
+            Driver::MDsetSpeed(1, -power);
+            Driver::MDsetSpeed(2, -power);
+            //モーターが反転している
+            Driver::MDsetSpeed(3, power);
+            Driver::MDsetSpeed(4, -power);
+        }
         else
         {
+            Driver::MDsetSpeed(1, power);
+            Driver::MDsetSpeed(2, power);
+            Driver::MDsetSpeed(3, -power);
+            Driver::MDsetSpeed(4, power);
         }
     }
 }

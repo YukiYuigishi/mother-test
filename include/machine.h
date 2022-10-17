@@ -17,16 +17,18 @@ namespace Machine
         Driver::MDsetSpeed(winding_motor, 90);
         // run weel
         /*
-        Serial.println(Driver::SW[1]);
-        while (!Driver::SW[1])
+        while (Driver::SW[1])
         {
-          Driver::MDsetSpeed(weel_motor, 260);
+            Driver::MDsetSpeed(6, 300);
         }
-        Driver::MDsetSpeed(weel_motor, 0);
         */
+        //weel();
 
+        // 射出
+        Serial.println("ban");
         Driver::MDsetSpeed(winding_motor, -100);
         Driver::servoSetAngle(servo_motor, servo_stop_arg);
+        delay(500);
 
         /*
           while (Driver::SW[1])
@@ -35,5 +37,29 @@ namespace Machine
           }
           Driver::MDsetSpeed(weel_motor, 0);
           */
+    }
+
+    void weel()
+    {
+
+        while (!Driver::SW[1])
+        {
+            Driver::MDsetSpeed(6, 250);
+        }
+
+        delay(200);
+        Serial.println("stop");
+        Driver::MDsetSpeed(6, 0);
+        // 動かす
+        while (Driver::SW[1])
+        {
+            Driver::MDsetSpeed(6, 250);
+        }
+        Driver::MDsetSpeed(6, 0);
+    }
+
+    void weel2()
+    {
+        Driver::MDsetSpeed(6, 250);
     }
 }
