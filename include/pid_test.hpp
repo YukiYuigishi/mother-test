@@ -21,8 +21,8 @@ private:
     double target_ = 0;
 
     const double kp_ = 1;
-    const double ki_ = 1;
-    const double kd_ = 1;
+    const double ki_ = 0;
+    const double kd_ = 0;
 
     void Pid();
     void Update();
@@ -32,5 +32,5 @@ public:
     PidTest(const int mdId_, const double kp_, const double ki_, const double kd_) : mdId_(mdId_), kp_(kp_), ki_(ki_), kd_(kd_) {}
     ~PidTest();
     double Run();
-    void SetTarget(int rotation);
+    void SetTarget(int rad);
 };
