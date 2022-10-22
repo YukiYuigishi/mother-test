@@ -2,6 +2,8 @@
 #include <math.h>
 #include <Driver.h>
 #include <pid_test.hpp>
+#include <config.h>
+#define PID_DEBUG 0
 namespace Omni
 {
 
@@ -21,25 +23,38 @@ namespace Omni
     typedef struct Coordinate FieldCoordinate;
     typedef struct Coordinate MachineCoordinate;
 
-    PidTest motor1(1, 14, 0, 0);
-    PidTest motor2(2, 14, 0, 0);
-    PidTest motor3(3, 14, 0, 0);
-    PidTest motor4(4, 17.25, 0, 0);
+    PidTest motor1(MachineConfig::Undercarrige::MOTOR_RIGHT, 17, 0, 0);
+    PidTest motor2(MachineConfig::Undercarrige::MOTOR_FRONT, 17, 0, 0);
+    PidTest motor3(MachineConfig::Undercarrige::MOTOR_LEFT, 17, 0, 0);
+    PidTest motor4(MachineConfig::Undercarrige::MOTOR_BACK, 20, 0, 0);
 
     //半径(mm)
     constexpr int ODOMETOR_OMNI_RADIUS = 24;
     inline __always_inline void run(double volume, double theata_rad)
     {
 
-        const double m1 = volume * sin(theata_rad);
-        const double m2 = volume * -cos(theata_rad);
-        const double m3 = volume * -sin(theata_rad);
-        const double m4 = volume * cos(theata_rad);
+        const double m1 = volume * -sin(theata_rad);
+        const double m2 = volume * cos(theata_rad);
+        const double m3 = volume * sin(theata_rad);
+        const double m4 = volume * -cos(theata_rad);
 
-        Driver::MDsetSpeed(1, m1);
-        Driver::MDsetSpeed(2, m2);
-        Driver::MDsetSpeed(3, -m3);
-        Driver::MDsetSpeed(4, m4);
+        motor1.SetTarget(m1);
+        motor2.SetTarget(m2);
+        motor3.SetTarget(m3);
+        motor4.SetTarget(m4);
+
+#if PID_DEBUG
+        Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_RIGHT, m1);
+        Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_FRONT, m2);
+        Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_LEFT, m3);
+        Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_BACK, -m4);
+#else
+        Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_RIGHT, motor1.Run());
+        Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_FRONT, motor2.Run());
+        Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_LEFT, motor3.Run());
+        Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_BACK, -motor4.Run());
+#endif
+
         // PID
         /*
             motor1.SetTarget(volume * sin(theata_rad));
@@ -118,7 +133,7 @@ namespace Omni
     // direction true is right , false is  left
     inline __always_inline void rotation(int power, bool direction)
     {
-        
+
         if (direction)
         {
 
