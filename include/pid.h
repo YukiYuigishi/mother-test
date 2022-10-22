@@ -1,50 +1,35 @@
 #pragma once
-#include <Encoder.h>
 #include <Driver.h>
+#include <config.h>
 
 namespace Pid
 {
-
-    extern double Kp[4];
-    extern double Ki[4];
-    /*
-    double r = 0;
-    double x = 0;
-    double u = 0;
-    double e = 0;
-    */
-    constexpr int lori_resolution = 2048;
-
-    // target speed
-    extern double target[4];
-    // deviation
-    extern double deviation[4][100];
-    // old lori tmp
-    extern int64_t lori_tmp[4];
-    // old time tmp
-    extern unsigned long time_tmp[4];
-    // output value
-    extern double output[4];
-    //    short (*readenc)(unsigned int enc);
-
-    /*
-    // initialize
-    void Init(short (*rotenc)(unsigned int))
+    class PidArg
     {
-        readenc = rotenc;
-    }
-    */
+    private:
+        const int md_ID_ = 0;
+        const int loli_ID_ = 0;
 
-    // ロリコン等のアップデート
-    // 引数にcallbackを取り、この関数は偏差の処理を行う ex. ロリコンの値をrpsに変換など
-    void Update(uint8_t loli, double devi[100], double (*callback)(int64_t));
-    // Pidのメインロジック
-    double PidLogic(double kp, double ki, double x, double r, double *devi);
-    // PIDの実行 callbackはロリコンの値の処理用
-    void Run(void (*MDx)(int, int));
+        const double kp_ = 1;
+        const double ki_ = 0;
+        const double kd_ = 0;
 
-    // int setValue(int md, double value);
+        // 偏差 e(t)
+        double deviation_[100] = {0};
+        // 入力値 u(t) PWM
+        double output_ = 0;
+        // 目標値 r(t)
+        double target_ = 0;
 
-    double Callback(int64_t lori);
+        double time_old_ = 0;
+
+        void pid();
+        void update();
+
+    public:
+        PidArg(MachineConfig::MDID md_ID, MachineConfig::LOLIID loli_ID, MachineConfig::PID::PidConfig &config) : md_ID_(md_ID), loli_ID_(loli_ID), kp_(config.kp), ki_(config.ki), kd_(config.kd) {}
+        void SetTarget(double target);
+        double Run();
+    }; // namespace Pid
 
 } // namespace Pid
