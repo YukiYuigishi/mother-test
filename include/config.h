@@ -15,6 +15,7 @@ namespace MachineConfig
 {
     typedef int MDID;
     typedef int LOLIID;
+    typedef int SWID;
     namespace PID
     {
         typedef struct
@@ -70,8 +71,17 @@ namespace MachineConfig
         //仰角　ロリコン
         constexpr LOLIID ANGLE_LOLI_LEFT = 0;
 
+        //仰角 リミットスイッチ前 右
+        constexpr SWID ANGLE_LIMIT_SW_RIGHT_F = 0;
+        //仰角 リミットスイッチ後 右
+        constexpr SWID ANGLE_LIMIT_SW_RIGHT_B = 0;
+        //仰角 リミットスイッチ前 左
+        constexpr SWID ANGLE_LIMIT_SW_LEFT_F = 0;
+        //仰角 リミットスイッチ後 左
+        constexpr SWID ANGLE_LIMIT_SW_LEFT_B = 0;
+
         //仰角上げ上限 右
-        constexpr int MOTOR_ANGLE_LIMIT_RIGHT = -168;
+        constexpr int MOTOR_ANGLE_LIMIT_RIGHT = 168;
         //仰角上げ上限 左
         constexpr int MOTOR_ANGLE_LIMIT_LEFT = 0;
 
