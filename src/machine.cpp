@@ -170,5 +170,34 @@ namespace Machine
 
     void checkCanonn()
     {
+        using namespace MachineConfig;
+        //右 リミットスイッチ確認
+        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_RIGHT_F])
+        {
+            //定数の300をどうにか白
+            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 300);
+            delay(80);
+            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 0);
+        }
+        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_LEFT_F])
+        {
+            //定数の300をどうにか白
+            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, -300);
+            delay(80);
+            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 0);
+        }
+
+        // todo
+        //リミットスイッチになった場合に要改修
+        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_RIGHT_B] || abs(Driver::lolicon_value[Canonn::ANGLE_LOLI_RIGHT]) > Canonn::MOTOR_ANGLE_LIMIT_RIGHT)
+        {
+            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 0);
+        }
+        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_LEFT_B] || abs(Driver::lolicon_value[Canonn::ANGLE_LOLI_LEFT]) > Canonn::MOTOR_ANGLE_LIMIT_LEFT)
+        {
+            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 0);
+        }
+
+        return;
     }
 }
