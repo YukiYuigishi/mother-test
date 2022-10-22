@@ -41,9 +41,9 @@ void PidTest::Update()
   lolicon_tmp_ = Driver::lolicon_value[mdId_];
 }
 
-void PidTest::SetTarget(int rps)
+void PidTest::SetTarget(int rad)
 { // target_ = rps * 2 * M_PI;
-  target_ = rps;
+  target_ = rad;
 }
 
 double PidTest::Run()
@@ -57,15 +57,15 @@ double PidTest::Run()
   //  Serial.printf("target:%lfrad/s\tnow:%lfrad/s\traw loli:%ld\tout:%lf\n", target_, deviation_[99], Driver::lolicon_value[1], output_);
   Serial.print("motor: ");
   Serial.print(mdId_);
-  Serial.print(" target: ");
+  Serial.print("\ttarget: ");
   Serial.print(target_);
   Serial.print("rad/s");
-  Serial.print(" now ");
+  Serial.print("\tnow ");
   Serial.print(Driver::lolicon_speed_value[mdId_]);
-  Serial.print(" devi: ");
+  Serial.print("\tdevi: ");
   Serial.print(deviation_[99]);
   Serial.print("rad/s ");
-  Serial.print(" pwm ");
+  Serial.print("\tpwm ");
   Serial.println(output_);
 
   Serial.printf("kp: %lf ki: %lf kd: %lf\n", kp_, ki_, kd_);
