@@ -5,8 +5,8 @@ namespace Machine
 {
 
     uint8_t machine_status[100] = {0};
-    Pid::PidArg arg_pid_right(MachineConfig::Canonn::MOTOR_ANGLE_RIGHT, MachineConfig::Canonn::ANGLE_LOLI_RIGHT, pidConfig[0]);
-    Pid::PidArg arg_pid_left(MachineConfig::Canonn::MOTOR_ANGLE_LEFT, MachineConfig::Canonn::ANGLE_LOLI_LEFT, pidConfig[1]);
+    Pid::PidArg arg_pid_right(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, MachineConfig::Canonn::ANGLE_LOLI_RIGHT, pidConfig[0]);
+    Pid::PidArg arg_pid_left(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, MachineConfig::Canonn::ANGLE_LOLI_LEFT, pidConfig[1]);
     MachineConfig::PID::PidConfig pidConfig[2] = {
         {1, 0, 0},
         {1, 0, 0},
@@ -72,6 +72,7 @@ namespace Machine
 
     void cannonnInit(int right_md_port, int right_sw_port, int right_loli_port, int left_md_port, int left_sw_port, int left_loli_port)
     {
+
         constexpr int right_down_speed = -400;
         constexpr int left_down_speed = 400;
 
@@ -120,26 +121,27 @@ namespace Machine
         */
 
         //入力を切り替え
-        switch (select)
-        {
-        case MachineConfig::Canonn::RIGHT:
-            arg_pid_right.SetTarget(angle);
-            double power = arg_pid_right.Run();
-            Serial.printf("arg power right: %lf\n", power);
-            Driver::MDsetSpeed(MachineConfig::Canonn::MOTOR_ANGLE_RIGHT, power);
+        //double power = 0;
+        //switch (select)
+        //{
+        //case MachineConfig::Canonn::RIGHT:
+        //    arg_pid_right.SetTarget(angle);
+        //    power = arg_pid_right.Run();
+        //    Serial.printf("arg power right: %lf\n", power);
+        // //   Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, power);
 
-            /* code */
-            break;
+        //    /* code */
+        //    break;
 
-        case MachineConfig::Canonn::LEFT:
-            arg_pid_left.SetTarget(angle);
-            double power = arg_pid_left.Run();
-            Driver::MDsetSpeed(MachineConfig::Canonn::MOTOR_ANGLE_LEFT, power);
-            break;
-        default:
-            return;
-            break;
-        }
+        //case MachineConfig::Canonn::LEFT:
+        //    arg_pid_left.SetTarget(angle);
+        //    power = arg_pid_left.Run();
+        //    Serial.printf("arg power right: %lf\n", power);
+        //  //  Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, power);
+        //    break;
+        //default:
+        //    return;
+        //}
     }
 
     // use Serial6
@@ -174,28 +176,32 @@ namespace Machine
         //右 リミットスイッチ確認
         if (Driver::SW[Canonn::ANGLE_LIMIT_SW_RIGHT_F])
         {
+            Serial.println("ANGLE_LIMIT_SW_RIGHT_F");
             //定数の300をどうにか白
-            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 300);
-            delay(80);
-            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 0);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 300);
+            delay(100);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
         }
         if (Driver::SW[Canonn::ANGLE_LIMIT_SW_LEFT_F])
         {
+            Serial.println("ANGLE_LIMIT_SW_LEFT_F");
             //定数の300をどうにか白
-            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, -300);
-            delay(80);
-            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 0);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, -300);
+            delay(100);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
         }
 
         // todo
         //リミットスイッチになった場合に要改修
-        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_RIGHT_B] || abs(Driver::lolicon_value[Canonn::ANGLE_LOLI_RIGHT]) > Canonn::MOTOR_ANGLE_LIMIT_RIGHT)
+        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_RIGHT_B] || abs(Driver::lolicon_value[Canonn::ANGLE_LOLI_RIGHT]) > Canonn::ANGLE_MOTOR_LIMIT_RIGHT)
         {
-            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 0);
+            Driver::segDriver(99);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
         }
-        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_LEFT_B] || abs(Driver::lolicon_value[Canonn::ANGLE_LOLI_LEFT]) > Canonn::MOTOR_ANGLE_LIMIT_LEFT)
+        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_LEFT_B] || abs(Driver::lolicon_value[Canonn::ANGLE_LOLI_LEFT]) > Canonn::ANGLE_MOTOR_LIMIT_LEFT)
         {
-            Driver::MDsetSpeed(Canonn::MOTOR_ANGLE_RIGHT, 0);
+            Driver::segDriver(99);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
         }
 
         return;

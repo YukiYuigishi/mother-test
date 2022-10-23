@@ -7,6 +7,7 @@ namespace Pid
     class PidArg
     {
     private:
+        const int pid_debug_ = 1;
         const int md_ID_ = 0;
         const int loli_ID_ = 0;
 

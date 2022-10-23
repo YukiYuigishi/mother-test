@@ -33,5 +33,20 @@ void Pid::PidArg::SetTarget(double target)
 
 double Pid::PidArg::Run()
 {
+    if (pid_debug_)
+    {
+
+        Serial.print("motor: ");
+        Serial.print(md_ID_);
+        Serial.print("\ttarget: ");
+        Serial.print(target_);
+        Serial.print("\tnow ");
+        Serial.print(Driver::lolicon_speed_value[md_ID_]);
+        Serial.print("\tdevi: ");
+        Serial.print(deviation_[99]);
+        Serial.print("rad/s ");
+        Serial.print("\tpwm ");
+        Serial.println(output_);
+    }
     return output_;
 }

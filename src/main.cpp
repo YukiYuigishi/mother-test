@@ -4,17 +4,12 @@
 #include <machine.h>
 #include <omni.h>
 #include <pid_test.hpp>
+#include <config.h>
 #include <array>
-#define DEBUG 0
+#define DEBUG 1
+constexpr bool undercarriage_en = 0;
 
-#define MOTOR_RIGHT 1
-#define MOTOR_FRONT 2
-#define MOTOR_LEFT 3
-#define MOTOR_BACK 4
-#define WINDING_MOTOR_RIGHT 
-#define WINDING_MOTOR_LEFT 
-#define WEEL_MOTOR_RIGHT
-#define WEEL_MOTOR_LEFT
+void canonnAngleSet(MachineConfig::Canonn::SELECT select, double angle);
 
 void setup()
 {
@@ -27,14 +22,27 @@ void setup()
 
   Serial.begin(9600);
   Serial.println("やあ、アリアルさんだよ。");
-  Machine::statusInit(1);
+  Serial.printf("足回り %d\n", (bool)undercarriage_en);
+  //  Machine::statusInit(1);
+  // 砲 init
+
+  Driver::MDsetSpeed(5, -450);
+
+  while (!Driver::SW[1])
+  {
+  }
+  Driver::lolicon_value[8] = 0;
+  Driver::MDsetSpeed(5, 400);
+  delay(100);
+  Driver::MDsetSpeed(5, 0);
 }
 
 #if DEBUG
 // release
-constexpr bool foots = 0;
 void loop()
 {
+  // config
+  constexpr bool undercarriage_en = 0;
 
   static Ps3Decoder::Data controller = {0};
 
@@ -55,63 +63,98 @@ void loop()
 
   machine_enable[39] = controller.start;
 
-  // avg select
-  double machine_enable_avg = 0;
-  for (int i = 0; i < 40; i++)
-  {
-    machine_enable_avg += machine_enable[i];
-  }
-  machine_enable_avg /= 40;
+  /*
+    // avg select
+    double machine_enable_avg = 0; for (int i = 0; i < 40; i++) {
+      machine_enable_avg += machine_enable[i];
+    }
+    machine_enable_avg /= 40;
 
-  static bool status = false;
-  if (machine_enable_avg > 0.6)
-  {
-    status = !status;
-    Driver::mainPowerEnable(status);
-  }
-  Serial.printf("status %d\n", status);
+    static bool status = false;
+    if (machine_enable_avg > 0.6)
+    {
+      status = !status;
+      Driver::mainPowerEnable(status);
+    }
+    Serial.printf("status %d\n", status);
 
+  */
   // IMUを滑らせる
   static double imu_eular_x[10] = {0};
-  for (double *i = imu_eular_x; i != imu_eular_x + 9; i++)
+  for (int i = 0; i < 9; i++)
   {
-    *i = *(i + 1);
+    imu_eular_x[i] = imu_eular_x[i + 1];
   }
 
   double imu_eular_x_avg = 0;
-  for (double *i = imu_eular_x; i != imu_eular_x + 10; i++)
+  for (int i = 0; i < 10; i++)
   {
-    imu_eular_x_avg += *i;
+    imu_eular_x_avg += imu_eular_x[i];
   }
   imu_eular_x_avg /= 10;
 
   imu_eular_x[9] = Driver::IMU_eular_x;
+  //射出機構//////////////////////////////
+
+  //仰角上げ
+  if (controller.up)
+  {
+    Serial.println("up");
+    Machine::canonnAngleSet(MachineConfig::Canonn::RIGHT, -153);
+    Driver::MDsetSpeed(5, 350);
+    /*
+    if (Driver::lolicon_value[8] < -168)
+    {
+      Driver::MDsetSpeed(5, 0);
+      Driver::segDriver(99);
+    }
+    */
+  }
+  //仰角下げ
+  else if (controller.down)
+  {
+    Serial.println("down");
+    Driver::MDsetSpeed(5, -430);
+  }
+  //仰角停止
+  else
+  {
+    Driver::MDsetSpeed(5, 0);
+  }
+
+  Serial.println(Driver::lolicon_value[8]);
+
+  Machine::checkCanonn();
+  /*
+    if (Driver::SW[1])
+    {
+      Driver::MDsetSpeed(5, 300);
+      delay(100);
+      Driver::MDsetSpeed(5, 0);
+    }
+  */
 
   // Serial.println(Driver::IMU_eular_x);
 
-  // 射出機構
+  // 射出
   if (controller.circle)
   {
     Serial.println("punish");
     Machine::arrow(6, 7, 1, 2, 3700, 0, 850);
+    Serial.println("done");
+    Serial8.flush();
   }
+  ////////////////////////////////////
 
-  // 足回り駆動
-  int controller_offset = 5;
-  constexpr int motor_speed = 500;
-  // wip
-  /*if ((controller.ry > 110 && controller.rx < controller_offset) ||
-  (controller.rx > 110 && controller.ry < controller_offset))
-  {
-    if (controller.ry > 110)
-    {
-    }
-  }*/
+  // 足回り駆動///////////////////////////////////
   // offset以下の入力を無効化
-  Serial.printf("rx:%d\n", controller.rx);
-  Serial.printf("ry:%d\n", -controller.ry);
-  if (foots)
+  if (undercarriage_en)
   {
+
+    int controller_offset = 5;
+    constexpr int motor_speed = 30;
+    Serial.printf("rx:%d\n", controller.rx);
+    Serial.printf("ry:%d\n", -controller.ry);
     if ((abs(controller.rx) > controller_offset) ||
         (abs(controller.ry) > controller_offset))
     {
@@ -121,44 +164,26 @@ void loop()
       double theta = atan2(controller.ry, -controller.rx);
       Serial.printf("theta %lf\n", theta);
       Omni::run(motor_speed, theta);
-      /*
-      // 第１、第４象限
-      if (controller.rx > 0)
-      {
-        double theta = atan((double)(-controller.ry) / controller.rx);
-        Serial.printf("theat %lf\n", theta);
-        Omni::run(motor_speed, theta);
-      }
-      else
-      {
-
-        //第２、第３象限
-        double theta = atan((double)(-controller.ry) / controller.rx) + M_PI;
-        Serial.printf("theat %lf\n", theta);
-        Omni::run(motor_speed, theta);
-      }
-      */
     }
     else
     {
       Omni::run(0, 0);
     }
-  }
-  //  Omni::run(500, M_PI / 4);
-  // Serial.println(controller.start);
+    //  Omni::run(500, M_PI / 4);
+    // Serial.println(controller.start);
 
-  Serial.printf("r1 %d\n", controller.r1);
-  Serial.printf("l1 %d\n", controller.l1);
-  /*
-  if (controller.r1)
-  {
-    Omni::rotation(200, true);
+    Serial.printf("r1 %d\n", controller.r1);
+    Serial.printf("l1 %d\n", controller.l1);
+    if (controller.r1)
+    {
+      Omni::rotation(200, true);
+    }
+    if (controller.l1)
+    {
+      Omni::rotation(200, false);
+    }
   }
-  if (controller.l1)
-  {
-    Omni::rotation(200, false);
-  }
-  */
+  ////////////////////////////////////////////////
 
   delay(20);
 }
@@ -198,6 +223,9 @@ void arrow(int winding_motor, int weel_motor, int milli_sec,
     Driver::MDsetSpeed(weel_motor, 0);
     */
 }
+
+// PidTest motor(MOTOR_RIGHT, 27.0, 1, 0);
+
 void loop()
 {
   static float imu_eular_x[10] = {0};
@@ -207,6 +235,28 @@ void loop()
   }
 
   imu_eular_x[9] = Driver::IMU_eular_x;
+  //  double target_speed = 5 * TWO_PI;
+  // motor.SetTarget(target_speed);
+
+  // Driver::MDsetSpeed(MOTOR_RIGHT, motor.Run());
+  // Serial.println(target_speed);
+  // Serial.println(Driver::lolicon_speed_value[MOTOR_RIGHT]);
+
+  int motor_speed = 500;
+  //  Omni::run(motor_speed, M_PI / 2);
+  /*
+  Driver::MDsetSpeed(1, 200);
+  Driver::MDsetSpeed(2, 200);
+  Driver::MDsetSpeed(3, 200);
+  Driver::MDsetSpeed(4, 200);
+
+  Serial.printf("1 %d\n", Driver::lolicon_value[1]);
+  Serial.printf("2 %d\n", Driver::lolicon_value[2]);
+  Serial.printf("3 %d\n", Driver::lolicon_value[3]);
+  Serial.printf("4 %d\n", Driver::lolicon_value[4]);
+  */
+
+  // PID test
 
   /*
     double imu_eular_x_avg = 0;
@@ -313,16 +363,16 @@ void loop()
   Driver::MDsetSpeed(6, 0);
 
 */
-  // static Ps3Decoder::Data controller = {0};
+  static Ps3Decoder::Data controller = {0};
 
   //コントローラ受信
-  /*
   if (Serial8.available() > 11)
   {
     uint8_t res[12] = {0};
     Serial8.readBytes(res, 12);
-    controller = Ps3Decoder::decode(res);
+    Ps3Decoder::decode(controller, res);
   }
+  /*
 
   Serial.printf("circle %d\n", controller.circle);
   if (controller.circle)
@@ -395,10 +445,63 @@ while (!controller.l1)
   Driver::MDsetSpeed(6, 0);
   */
 
+  //  Serial.println(Driver::lolicon_value[8]);
+
+  if (controller.circle)
+  {
+    Machine::arrow(6, 7, 1, 2, 3400, 0, 850);
+    Serial8.flush();
+  }
+
   //仰角上げ
-  Driver::MDsetSpeed(5, 300);
+  if (controller.up)
+  {
+    Serial.println("up");
+    Driver::MDsetSpeed(5, 350);
+    if (Driver::lolicon_value[8] < -168)
+    {
+      Driver::MDsetSpeed(5, 0);
+      Driver::segDriver(99);
+    }
+  }
   //仰角下げ
-  // Driver::MDsetSpeed(5, -300);
+  else if (controller.down)
+  {
+    Serial.println("down");
+    Driver::MDsetSpeed(5, -430);
+  }
+  //仰角停止
+  else
+  {
+    Driver::MDsetSpeed(5, 0);
+  }
+
+  Serial.println(Driver::lolicon_value[8]);
+
+  if (Driver::SW[1])
+  {
+    Driver::MDsetSpeed(5, 300);
+    delay(100);
+    Driver::MDsetSpeed(5, 0);
+  }
+  //仰角下げ 右
+  //  Driver::MDsetSpeed(5, -450);
+  //仰角上げ
+  // Driver::MDsetSpeed(5, 300);
+  /*
+
+    if (Driver::SW[1])
+    {
+      Driver::MDsetSpeed(5, 0);
+      Driver::MDsetSpeed(5, 400);
+      delay(100);
+      Driver::MDsetSpeed(5, 0);
+      while (1)
+      {
+        Driver::segDriver(99);
+      }
+    };
+    */
   //  Machine::arrow(5, 0, 2, 0, 4000, 0, 850);
 
   //  Serial.println(Driver::lolicon_value[10]);
@@ -430,7 +533,53 @@ while (!controller.l1)
 
   // uint8_t tmp = Machine::checkStatus();
   // Driver::safeMode(10);
+  // Serial.println("panish");
+  //  Machine::arrow(6, 7, 1, 2, 4200, 0, 850);
+  // Serial.println("test");
 
+  constexpr int controller_offset = 5;
+  bool foots = 1;
+  Serial.printf("rx:%d\n", controller.rx);
+  Serial.printf("ry:%d\n", -controller.ry);
+  if (foots)
+  {
+    if ((abs(controller.rx) > controller_offset) ||
+        (abs(controller.ry) > controller_offset))
+    {
+      //正常系
+      // double theta = atan2(-controller.ry, controller.rx);
+      //上下左右反転系
+      double theta = atan2(controller.ry, -controller.rx);
+      Serial.printf("theta %lf\n", theta);
+      Omni::run(motor_speed, theta);
+      /*
+      // 第１、第４象限
+      if (controller.rx > 0)
+      {
+        double theta = atan((double)(-controller.ry) / controller.rx);
+        Serial.printf("theat %lf\n", theta);
+        Omni::run(motor_speed, theta);
+      }
+      else
+      {
+
+        //第２、第３象限
+        double theta = atan((double)(-controller.ry) / controller.rx) + M_PI;
+        Serial.printf("theat %lf\n", theta);
+        Omni::run(motor_speed, theta);
+      }
+      */
+    }
+    else
+    {
+      Omni::run(0, 0);
+    }
+  }
+  //  Driver::MDsetSpeed(3, 300);
+  // Driver::MDsetSpeed(1, 300);
+  // Driver::MDsetSpeed(2, 300);
+  // Driver::MDsetSpeed(3, 300);
+  // Driver::MDsetSpeed(4, 300);
   delay(20);
 }
 #endif
