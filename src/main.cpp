@@ -1,15 +1,15 @@
 #include <Arduino.h>
 #include <Driver.h>
 #include <Ps3Decoder.h>
-#include <machine.h>
-#include <omni.h>
+#include <machine.hpp>
+#include <omni.hpp>
 #include <pid_test.hpp>
-#include <config.h>
+#include <config.hpp>
 #include <array>
 #define DEBUG 1
 constexpr bool undercarriage_en = 0;
 
-void canonnAngleSet(MachineConfig::Canonn::SELECT select, double angle);
+// void Machine::canonnAngleSet(MachineConfig::Canonn::SELECT select, double angle);
 
 void setup()
 {

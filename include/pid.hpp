@@ -1,6 +1,6 @@
 #pragma once
 #include <Driver.h>
-#include <config.h>
+#include <config.hpp>
 
 namespace Pid
 {

@@ -1,5 +1,4 @@
-#include <machine.h>
-#include <config.h>
+#include <machine.hpp>
 
 namespace Machine
 {

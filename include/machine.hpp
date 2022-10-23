@@ -1,7 +1,7 @@
 #pragma once
 #include <Driver.h>
-#include <config.h>
-#include <pid.h>
+#include <config.hpp>
+#include <pid.hpp>
 namespace Machine
 {
     extern MachineConfig::PID::PidConfig pidConfig[2];

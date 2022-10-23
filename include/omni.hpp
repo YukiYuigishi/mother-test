@@ -2,7 +2,7 @@
 #include <math.h>
 #include <Driver.h>
 #include <pid_test.hpp>
-#include <config.h>
+#include <config.hpp>
 #define PID_DEBUG 0
 namespace Omni
 {
