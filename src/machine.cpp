@@ -4,11 +4,14 @@ namespace Machine
 {
 
     uint8_t machine_status[100] = {0};
-    Pid::PidArg arg_pid_right(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, MachineConfig::Canonn::ANGLE_LOLI_RIGHT, pidConfig[0]);
-    Pid::PidArg arg_pid_left(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, MachineConfig::Canonn::ANGLE_LOLI_LEFT, pidConfig[1]);
+    Pid::PidArg angle_pid_right(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, MachineConfig::Canonn::ANGLE_LOLI_RIGHT, pidConfig[0]);
+    Pid::PidArg angle_pid_left(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, MachineConfig::Canonn::ANGLE_LOLI_LEFT, pidConfig[1]);
+    int angle_canonn_right = 5;
+    int angle_canonn_left = 5;
+
     MachineConfig::PID::PidConfig pidConfig[2] = {
-        {1, 0, 0},
-        {1, 0, 0},
+        {300, 0.1, 0},
+        {3, 0, 0},
     };
     void arrow(const int winding_motor, const int weel_motor, const int servo_motor, const int SW_number, const int milli_sec, const int servo_winding_arg, const int servo_stop_arg)
     {
@@ -19,9 +22,9 @@ namespace Machine
         delay(50);
         //サーボで継手に接続
         Driver::servoSetAngle(servo_motor, servo_winding_arg);
-        Driver::MDsetSpeed(winding_motor, power);
-        //巻取り delay
-        // millisec 5000
+        Driver::MDsetSpeed(winding_motor, power); //巻取り delay
+        // millisec 500000
+
         delay(milli_sec);
         Driver::MDsetSpeed(winding_motor, -90);
         delay(500);
@@ -111,8 +114,11 @@ namespace Machine
         }
         Serial.println("Status Init");
     }
-    void canonnAngleSet(MachineConfig::Canonn::SELECT select, double angle)
+    void canonnAngleSet(MachineConfig::Canonn::SELECT select, int angle)
     {
+
+        using namespace MachineConfig;
+
         // memo
         /*
         初期位置の角度は水平面に対して０度ではない.
@@ -120,27 +126,38 @@ namespace Machine
         */
 
         //入力を切り替え
-        //double power = 0;
-        //switch (select)
-        //{
-        //case MachineConfig::Canonn::RIGHT:
-        //    arg_pid_right.SetTarget(angle);
-        //    power = arg_pid_right.Run();
-        //    Serial.printf("arg power right: %lf\n", power);
-        // //   Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, power);
+        double power = 0;
+        switch (select)
+        {
+        case MachineConfig::Canonn::RIGHT:
+            while (Driver::lolicon_value[Canonn::ANGLE_LOLI_RIGHT] > (angle + 1) || Driver::lolicon_value[Canonn::ANGLE_LOLI_RIGHT] < (angle - 1))
+            {
+                angle_pid_right.SetTarget(angle);
+                power = angle_pid_right.Run();
+                Serial.printf("angle power right: %lf\n", -power);
+                if (power > 400)
+                {
+                    power = 400;
+                }
+                else if (power < -400)
+                {
+                    power = -400;
+                }
 
-        //    /* code */
-        //    break;
+                Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, -power);
+                delay(20);
+            }
 
-        //case MachineConfig::Canonn::LEFT:
-        //    arg_pid_left.SetTarget(angle);
-        //    power = arg_pid_left.Run();
-        //    Serial.printf("arg power right: %lf\n", power);
-        //  //  Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, power);
-        //    break;
-        //default:
-        //    return;
-        //}
+            /* code */
+            break;
+
+        case MachineConfig::Canonn::LEFT:
+            angle_pid_left.SetTarget(angle);
+            power = angle_pid_left.Run();
+            Serial.printf("arg power right: %lf\n", power);
+            //  Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, power);
+            break;
+        }
     }
 
     // use Serial6
@@ -169,7 +186,7 @@ namespace Machine
         return status_avg / 100;
     }
 
-    void checkCanonn()
+    void checkCanonnFront()
     {
         using namespace MachineConfig;
         //右 リミットスイッチ確認
@@ -177,7 +194,7 @@ namespace Machine
         {
             Serial.println("ANGLE_LIMIT_SW_RIGHT_F");
             //定数の300をどうにか白
-            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 300);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 400);
             delay(100);
             Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
         }
@@ -185,10 +202,11 @@ namespace Machine
         {
             Serial.println("ANGLE_LIMIT_SW_LEFT_F");
             //定数の300をどうにか白
-            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, -300);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, -400);
             delay(100);
             Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
         }
+        /*
 
         // todo
         //リミットスイッチになった場合に要改修
@@ -202,7 +220,24 @@ namespace Machine
             Driver::segDriver(99);
             Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
         }
+        */
 
         return;
+    }
+    void checkCanonnBack()
+    {
+        using namespace MachineConfig;
+        // todo
+        //リミットスイッチになった場合に要改修
+        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_RIGHT_B] || abs(Driver::lolicon_value[Canonn::ANGLE_LOLI_RIGHT]) > Canonn::ANGLE_MOTOR_LIMIT_RIGHT)
+        {
+            Driver::segDriver(99);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
+        }
+        if (Driver::SW[Canonn::ANGLE_LIMIT_SW_LEFT_B] || abs(Driver::lolicon_value[Canonn::ANGLE_LOLI_LEFT]) > Canonn::ANGLE_MOTOR_LIMIT_LEFT)
+        {
+            Driver::segDriver(99);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
+        }
     }
 }
