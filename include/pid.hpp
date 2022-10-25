@@ -16,11 +16,14 @@ namespace Pid
         const double kd_ = 0;
 
         // 偏差 e(t)
-        double deviation_[100] = {0};
+        double deviation_ = 0;
         // 入力値 u(t) PWM
         double output_ = 0;
         // 目標値 r(t)
         double target_ = 0;
+
+        // sum
+        double deviation_sum = 0;
 
         double time_old_ = 0;
 

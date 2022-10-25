@@ -3,36 +3,34 @@
 void Pid::PidArg::pid()
 {
 
-    //    uint32_t time_diff = millis() - time_old_;
+    // static uint32_t time_old = millis();
+    // uint32_t time_diff = millis() - time_old_;
 
     double deviation_sum = 0;
-    for (int i = 0; i < 100; i++)
-    {
-        deviation_sum += deviation_[i];
-    }
+    deviation_sum += deviation_;
+
     // d制御なし
     // double deviation_differential = (double)deviation_[99] / time_diff;
 
     //    output_ = kp_ * deviation_[99] + ki_ * deviation_sum + kd_ * deviation_differential;
-    output_ = kp_ * deviation_[99] + ki_ * deviation_sum;
+    output_ = kp_ * deviation_ + ki_ * deviation_sum;
 }
 
 void Pid::PidArg::update()
 {
-    for (int i = 0; i < 99; i++)
-    {
-        deviation_[i] = deviation_[i + 1];
-    }
 
-    deviation_[99] = target_ - Driver::lolicon_value[loli_ID_];
+    deviation_ = target_ - Driver::lolicon_value[loli_ID_];
 }
 
 void Pid::PidArg::SetTarget(double target)
 {
+    target_ = target;
 }
 
 double Pid::PidArg::Run()
 {
+    update();
+    pid();
     if (pid_debug_)
     {
 
@@ -41,10 +39,9 @@ double Pid::PidArg::Run()
         Serial.print("\ttarget: ");
         Serial.print(target_);
         Serial.print("\tnow ");
-        Serial.print(Driver::lolicon_speed_value[md_ID_]);
+        Serial.print(Driver::lolicon_value[md_ID_]);
         Serial.print("\tdevi: ");
-        Serial.print(deviation_[99]);
-        Serial.print("rad/s ");
+        Serial.print(deviation_);
         Serial.print("\tpwm ");
         Serial.println(output_);
     }
