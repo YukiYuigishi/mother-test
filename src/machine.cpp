@@ -130,24 +130,19 @@ namespace Machine
         switch (select)
         {
         case MachineConfig::Canonn::RIGHT:
-            while (Driver::lolicon_value[Canonn::ANGLE_LOLI_RIGHT] > (angle + 1) || Driver::lolicon_value[Canonn::ANGLE_LOLI_RIGHT] < (angle - 1))
+            angle_pid_right.SetTarget(angle);
+            power = -angle_pid_right.Run();
+            Serial.printf("angle power right: %lf\n", power);
+            if (power > 500)
             {
-                angle_pid_right.SetTarget(angle);
-                power = angle_pid_right.Run();
-                Serial.printf("angle power right: %lf\n", -power);
-                if (power > 400)
-                {
-                    power = 400;
-                }
-                else if (power < -400)
-                {
-                    power = -400;
-                }
-
-                Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, -power);
-                delay(20);
+                power = 500;
+            }
+            else if (power < -500)
+            {
+                power = -500;
             }
 
+            Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, power);
             /* code */
             break;
 

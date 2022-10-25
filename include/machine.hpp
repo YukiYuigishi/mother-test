@@ -10,6 +10,10 @@ namespace Machine
     extern Pid::PidArg angle_pid_right;
     extern Pid::PidArg angle_pid_left;
 
+    //仰角の角度
+    extern int angle_canonn_right;
+    extern int angle_canonn_left;
+
     // millsec 5000
     void arrow(const int winding_motor, const int weel_motor, const int servo_motor, const int SW_number, const int milli_sec, const int servo_winding_arg, const int servo_stop_arg);
 
