@@ -15,7 +15,7 @@ namespace Machine
     };
     void arrow(const int winding_motor, const int weel_motor, const int servo_motor, const int SW_number, const int milli_sec, const int servo_winding_arg, const int servo_stop_arg)
     {
-        constexpr int power = 1400;
+        constexpr int power = 2040;
         //事前の回転
         Driver::MDsetSpeed(winding_motor, 50);
         // 巻取り用モーターの加速まち
