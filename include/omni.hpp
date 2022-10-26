@@ -136,19 +136,19 @@ namespace Omni
 
         if (direction)
         {
-
-            Driver::MDsetSpeed(1, -power);
-            Driver::MDsetSpeed(2, -power);
+            Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_RIGHT, -power);
+            Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_FRONT, -power);
+            Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_LEFT, -power);
             //モーターが反転している
-            Driver::MDsetSpeed(3, power);
-            Driver::MDsetSpeed(4, -power);
+            Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_BACK, power);
         }
         else
         {
-            Driver::MDsetSpeed(1, power);
-            Driver::MDsetSpeed(2, power);
-            Driver::MDsetSpeed(3, -power);
-            Driver::MDsetSpeed(4, power);
+
+            Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_RIGHT, power);
+            Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_FRONT, power);
+            Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_LEFT, power);
+            Driver::MDsetSpeed(MachineConfig::Undercarrige::MOTOR_BACK, -power);
         }
     }
 }
