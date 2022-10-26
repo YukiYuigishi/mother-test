@@ -45,17 +45,28 @@ namespace MachineConfig
 
     namespace Odometor
     {
+        constexpr LOLIID LOLI_1 = 0;
+        constexpr LOLIID LOLI_2 = 0;
+        constexpr LOLIID LOLI_3 = 0;
+        constexpr LOLIID LOLI_4 = 0;
 
     };
 
     namespace Canonn
     {
 
-        typedef enum
+        /*
+                typedef enum
+                {
+                    RIGHT,
+                    LEFT
+                } SELECT;
+                */
+        enum SELECT
         {
             RIGHT,
             LEFT
-        } SELECT;
+        };
 
         constexpr PID::PidConfig PID_CANONN_ANGLE_RIGHT = {1, 0, 0};
         constexpr PID::PidConfig PID_CANONN_ANGLE_LEFT = {1, 0, 0};
