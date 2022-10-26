@@ -1,13 +1,16 @@
+#include <config.hpp>
 #include <Arduino.h>
 #include <Driver.h>
 #include <Ps3Decoder.h>
 #include <machine.hpp>
 #include <omni.hpp>
 #include <pid_test.hpp>
-#include <config.hpp>
 #include <array>
 #define DEBUG 1
 constexpr bool undercarriage_en = 0;
+constexpr bool canonn_en = 1;
+// 0 is dualshock3 bluetooth, 1 is lazurite controller for Nachan protocol, 2 is lazurite controller for Yuki Protocol
+constexpr int controller_en = 0;
 
 // void Machine::canonnAngleSet(MachineConfig::Canonn::SELECT select, double angle);
 
@@ -22,127 +25,109 @@ void setup()
 
   Serial.begin(9600);
   Serial.println("やあ、アリアルさんだよ。");
-  Serial.printf("足回り %d\n", (bool)undercarriage_en);
+  Serial.printf("足回り %d\n", (int)undercarriage_en);
+  Serial.printf("射出機構 %d\n", (int)canonn_en);
   //  Machine::statusInit(1);
   // 砲 init
 
-  Driver::MDsetSpeed(5, -450);
-
-  while (!Driver::SW[1])
+  if (canonn_en)
   {
+    Driver::MDsetSpeed(5, -450);
+
+    while (!Driver::SW[1])
+    {
+    }
+    Driver::lolicon_value[8] = 0;
+    Driver::MDsetSpeed(5, 400);
+    delay(150);
+    Driver::MDsetSpeed(5, 0);
   }
-  Driver::lolicon_value[8] = 0;
-  Driver::MDsetSpeed(5, 400);
-  delay(100);
-  Driver::MDsetSpeed(5, 0);
 }
 
 #if DEBUG
 // release
 void loop()
 {
-  // config
-  constexpr bool undercarriage_en = 0;
-
+  // 主砲pid
+  // Machine::canonnAngleSet(MachineConfig::Canonn::RIGHT, Machine::angle_canonn_right);
+  // Serial.printf("angle %d\n", Machine::angle_canonn_right);
   static Ps3Decoder::Data controller = {0};
 
-  //コントローラ受信
-  if (Serial8.available() > 11)
+  // dualshock3 bluetooth
+  if (controller_en == 0)
   {
-    uint8_t res[12] = {0};
-    Serial8.readBytes(res, 12);
-    Ps3Decoder::decode(controller, res);
+    //コントローラ受信
+    if (Serial8.available() > 11)
+    {
+      uint8_t res[12] = {0};
+      Serial8.readBytes(res, 12);
+      Ps3Decoder::decode(controller, res);
+    }
   }
+
+  // nachan protocol
 
   // push start button machine enable or disable
-  static bool machine_enable[40] = {0};
-  for (bool *i = machine_enable; i < machine_enable + 39; i++)
-  {
-    *i = *(i + 1);
-  }
 
-  machine_enable[39] = controller.start;
-
-  /*
-    // avg select
-    double machine_enable_avg = 0; for (int i = 0; i < 40; i++) {
-      machine_enable_avg += machine_enable[i];
-    }
-    machine_enable_avg /= 40;
-
-    static bool status = false;
-    if (machine_enable_avg > 0.6)
-    {
-      status = !status;
-      Driver::mainPowerEnable(status);
-    }
-    Serial.printf("status %d\n", status);
-
-  */
-  // IMUを滑らせる
-  static double imu_eular_x[10] = {0};
-  for (int i = 0; i < 9; i++)
-  {
-    imu_eular_x[i] = imu_eular_x[i + 1];
-  }
-
-  double imu_eular_x_avg = 0;
-  for (int i = 0; i < 10; i++)
-  {
-    imu_eular_x_avg += imu_eular_x[i];
-  }
-  imu_eular_x_avg /= 10;
-
-  imu_eular_x[9] = Driver::IMU_eular_x;
   //射出機構//////////////////////////////
-
-  //仰角上げ
-  if (controller.up)
+  if (canonn_en)
   {
-    Serial.println("up");
-    Machine::canonnAngleSet(MachineConfig::Canonn::RIGHT, -153);
-    Driver::MDsetSpeed(5, 350);
-    /*
-    if (Driver::lolicon_value[8] < -168)
+
+    //仰角上げ
+    if (controller.up)
+    {
+      Serial.println("up");
+      //  Machine::canonnAngleSet(MachineConfig::Canonn::RIGHT, -153);
+      //      Machine::angle_canonn_right += 1;
+      Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, 400);
+      Machine::checkCanonnBack();
+      /*
+      if (Driver::lolicon_value[8] < -168)
+      {
+        Driver::MDsetSpeed(5, 0);
+        Driver::segDriver(99);
+      }
+      */
+    }
+    //仰角下げ
+    else if (controller.down)
+    {
+      Serial.println("down");
+      //      Machine::angle_canonn_left -= 1;
+      Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, -400);
+      Machine::checkCanonnFront();
+    }
+    else if (controller.cross)
+    {
+      Serial.println("cross");
+      Machine::canonnAngleSet(MachineConfig::Canonn::RIGHT, -153);
+    }
+    //仰角停止
+    else
     {
       Driver::MDsetSpeed(5, 0);
-      Driver::segDriver(99);
     }
-    */
-  }
-  //仰角下げ
-  else if (controller.down)
-  {
-    Serial.println("down");
-    Driver::MDsetSpeed(5, -430);
-  }
-  //仰角停止
-  else
-  {
-    Driver::MDsetSpeed(5, 0);
-  }
+    // Machine::canonnAngleSet(MachineConfig::Canonn::RIGHT, -153);
 
-  Serial.println(Driver::lolicon_value[8]);
+    Serial.println(Driver::lolicon_value[8]);
 
-  Machine::checkCanonn();
-  /*
-    if (Driver::SW[1])
+    // Machine::checkCanonnFront();
+
+    // Serial.println(Driver::IMU_eular_x);
+
+    // 射出
+
+    Serial.printf("circle %d\n", controller.square);
+    if (Serial.available() > 0)
     {
-      Driver::MDsetSpeed(5, 300);
-      delay(100);
-      Driver::MDsetSpeed(5, 0);
+      if (Serial.read() == '\n')
+      {
+        Serial.println("fire");
+        Machine::arrow(6, 7, 1, 2, 4500, 0, 850);
+        Serial.println("done");
+        Serial8.flush();
+      }
     }
-  */
-
-  // Serial.println(Driver::IMU_eular_x);
-
-  // 射出
-  if (controller.circle)
-  {
-    Serial.println("punish");
-    Machine::arrow(6, 7, 1, 2, 3700, 0, 850);
-    Serial.println("done");
-    Serial8.flush();
   }
   ////////////////////////////////////
 
@@ -152,7 +137,7 @@ void loop()
   {
 
     int controller_offset = 5;
-    constexpr int motor_speed = 30;
+    int motor_speed = sqrt(pow(controller.rx, 2) + pow(controller.ry, 2)) * 1.5 / 2;
     Serial.printf("rx:%d\n", controller.rx);
     Serial.printf("ry:%d\n", -controller.ry);
     if ((abs(controller.rx) > controller_offset) ||
@@ -176,11 +161,11 @@ void loop()
     Serial.printf("l1 %d\n", controller.l1);
     if (controller.r1)
     {
-      Omni::rotation(200, true);
+      Omni::rotation(250, true);
     }
     if (controller.l1)
     {
-      Omni::rotation(200, false);
+      Omni::rotation(250, false);
     }
   }
   ////////////////////////////////////////////////
@@ -447,47 +432,6 @@ while (!controller.l1)
 
   //  Serial.println(Driver::lolicon_value[8]);
 
-  if (controller.circle)
-  {
-    Machine::arrow(6, 7, 1, 2, 3400, 0, 850);
-    Serial8.flush();
-  }
-
-  //仰角上げ
-  if (controller.up)
-  {
-    Serial.println("up");
-    Driver::MDsetSpeed(5, 350);
-    if (Driver::lolicon_value[8] < -168)
-    {
-      Driver::MDsetSpeed(5, 0);
-      Driver::segDriver(99);
-    }
-  }
-  //仰角下げ
-  else if (controller.down)
-  {
-    Serial.println("down");
-    Driver::MDsetSpeed(5, -430);
-  }
-  //仰角停止
-  else
-  {
-    Driver::MDsetSpeed(5, 0);
-  }
-
-  Serial.println(Driver::lolicon_value[8]);
-
-  if (Driver::SW[1])
-  {
-    Driver::MDsetSpeed(5, 300);
-    delay(100);
-    Driver::MDsetSpeed(5, 0);
-  }
-  //仰角下げ 右
-  //  Driver::MDsetSpeed(5, -450);
-  //仰角上げ
-  // Driver::MDsetSpeed(5, 300);
   /*
 
     if (Driver::SW[1])
@@ -505,13 +449,6 @@ while (!controller.l1)
   //  Machine::arrow(5, 0, 2, 0, 4000, 0, 850);
 
   //  Serial.println(Driver::lolicon_value[10]);
-  static uint8_t status[100] = {0};
-  int status_avg = 0;
-  for (int i = 0; i < 98; i++)
-  {
-    status[i] = status[i + 1];
-    status_avg += status[i];
-  }
 
   /*
     if (Serial8.available())
@@ -537,49 +474,14 @@ while (!controller.l1)
   //  Machine::arrow(6, 7, 1, 2, 4200, 0, 850);
   // Serial.println("test");
 
-  constexpr int controller_offset = 5;
-  bool foots = 1;
-  Serial.printf("rx:%d\n", controller.rx);
-  Serial.printf("ry:%d\n", -controller.ry);
-  if (foots)
-  {
-    if ((abs(controller.rx) > controller_offset) ||
-        (abs(controller.ry) > controller_offset))
-    {
-      //正常系
-      // double theta = atan2(-controller.ry, controller.rx);
-      //上下左右反転系
-      double theta = atan2(controller.ry, -controller.rx);
-      Serial.printf("theta %lf\n", theta);
-      Omni::run(motor_speed, theta);
-      /*
-      // 第１、第４象限
-      if (controller.rx > 0)
-      {
-        double theta = atan((double)(-controller.ry) / controller.rx);
-        Serial.printf("theat %lf\n", theta);
-        Omni::run(motor_speed, theta);
-      }
-      else
-      {
-
-        //第２、第３象限
-        double theta = atan((double)(-controller.ry) / controller.rx) + M_PI;
-        Serial.printf("theat %lf\n", theta);
-        Omni::run(motor_speed, theta);
-      }
-      */
-    }
-    else
-    {
-      Omni::run(0, 0);
-    }
-  }
   //  Driver::MDsetSpeed(3, 300);
   // Driver::MDsetSpeed(1, 300);
   // Driver::MDsetSpeed(2, 300);
   // Driver::MDsetSpeed(3, 300);
   // Driver::MDsetSpeed(4, 300);
-  delay(20);
+  // 右 330  => 850
+
+  Driver::servoSetAngle(1, 0);
+  delay(1000);
 }
 #endif
