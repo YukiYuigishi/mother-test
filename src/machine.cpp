@@ -86,7 +86,7 @@ namespace Machine
         {
         case MachineConfig::Canonn::RIGHT:
             //+が巻取り方向
-            constexpr int hold_power = 90;
+            constexpr int hold_power = 150;
             constexpr int slow_start_power_right = 50;
             constexpr int away_power_right = -100;
             //事前の回転

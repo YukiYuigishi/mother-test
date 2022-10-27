@@ -7,7 +7,7 @@
 #include <pid_test.hpp>
 #include <array>
 #define DEBUG 1
-constexpr bool undercarriage_en = 0;
+constexpr bool undercarriage_en = 1;
 constexpr bool canonn_en = 1;
 // 0 is dualshock3 bluetooth, 1 is lazurite controller for Nachan protocol, 2 is lazurite controller for Yuki Protocol
 constexpr int controller_en = 0;
@@ -42,6 +42,9 @@ void setup()
     delay(150);
     Driver::MDsetSpeed(5, 0);
   }
+  //固定
+  //  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 1700);
+  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 400);
 }
 
 #if DEBUG
@@ -52,6 +55,20 @@ void loop()
   // Machine::canonnAngleSet(MachineConfig::Canonn::RIGHT, Machine::angle_canonn_right);
   // Serial.printf("angle %d\n", Machine::angle_canonn_right);
   static Ps3Decoder::Data controller = {0};
+  switch (Machine::canonn_status)
+  {
+  case MachineConfig::Canonn::RIGHT:
+    /* code */
+    Driver::illumination(0, 0, 0xFF, 0);
+    Serial.println("Right Canonn");
+    break;
+  case MachineConfig::Canonn::LEFT:
+    Driver::illumination(0xFF, 0, 0, 0);
+    Serial.println("Left Canonn");
+    break;
+  default:
+    break;
+  }
 
   // dualshock3 bluetooth
   if (controller_en == 0)
@@ -72,14 +89,32 @@ void loop()
   //射出機構//////////////////////////////
   if (canonn_en)
   {
+    if (controller.right)
+    {
+      Machine::canonn_status = MachineConfig::Canonn::RIGHT;
+    }
+    if (controller.left)
+    {
+      Machine::canonn_status = MachineConfig::Canonn::LEFT;
+    }
 
     //仰角上げ
     if (controller.up)
     {
-      Serial.println("up");
       //  Machine::canonnAngleSet(MachineConfig::Canonn::RIGHT, -153);
       //      Machine::angle_canonn_right += 1;
-      Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, 400);
+      switch (Machine::canonn_status)
+      {
+      case MachineConfig::Canonn::RIGHT:
+        /* code */
+        Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, 400);
+        Serial.println("Right up");
+        break;
+      case MachineConfig::Canonn::LEFT:
+        Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, -400);
+        Serial.println("Left up");
+        break;
+      }
       Machine::checkCanonnBack();
       /*
       if (Driver::lolicon_value[8] < -168)
@@ -94,7 +129,19 @@ void loop()
     {
       Serial.println("down");
       //      Machine::angle_canonn_left -= 1;
-      Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, -400);
+      //      Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, -400);
+      switch (Machine::canonn_status)
+      {
+      case MachineConfig::Canonn::RIGHT:
+        /* code */
+        Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, -400);
+        Serial.println("Right down");
+        break;
+      case MachineConfig::Canonn::LEFT:
+        Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, 400);
+        Serial.println("Left down");
+        break;
+      }
       Machine::checkCanonnFront();
     }
     else if (controller.cross)
@@ -118,15 +165,26 @@ void loop()
     // 射出
 
     Serial.printf("circle %d\n", controller.square);
+    /*
     if (Serial.available() > 0)
     {
       if (Serial.read() == '\n')
       {
         Serial.println("fire");
-        Machine::arrow(6, 7, 1, 2, 4500, 0, 850);
-        Serial.println("done");
+        / Machine::arrow(6, 7, 1, 2, 4500, 0, 850);
+        Machine::canonnShot(MachineConfig::Canonn::RIGHT, 4500);
         Serial8.flush();
+        Serial.println("done");
       }
+    }
+    */
+    if (controller.circle)
+    {
+      Serial.println("fire");
+      //Machine::arrow(6, 7, 1, 2, 4300, 0, 850);
+      Machine::canonnShot(MachineConfig::Canonn::RIGHT, 1950);
+      Serial8.flush();
+      Serial.println("done");
     }
   }
   ////////////////////////////////////
@@ -481,7 +539,82 @@ while (!controller.l1)
   // Driver::MDsetSpeed(4, 300);
   // 右 330  => 850
 
-  Driver::servoSetAngle(1, 0);
-  delay(1000);
+  //  Driver::servoSetAngle(1, 0);
+  // Serial.printf("sw2 %d\n", Driver::SW[2]);
+  /*
+  while (!Driver::SW[2])
+  {
+    Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
+  }
+  Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 0);
+
+  //固定
+  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 1700);
+  delay(500);
+  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 330);
+  while (Driver::SW[2])
+  {
+    Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
+  }
+  Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 0);
+  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 330);
+  delay(500);
+  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 850);
+  delay(500);
+  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 1700);
+  delay(500);
+  */
+
+  //  Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_RIGHT, 5000); //巻取り delay
+
+  /* 装填機構
+  static uint32_t old_read = 0;
+  uint32_t read1 = 0;
+  uint32_t read2 = 0;
+  noInterrupts();
+  FlexiTimer2::stop();
+  Wire.requestFrom(0x0b, 8);
+  if (Wire.available() > 0)
+  {
+    read1 = Wire.read();
+    read1 += Wire.read() << 8;
+    read1 += Wire.read() << 16;
+    read1 += Wire.read() << 24;
+    Serial.printf("read1 %d\n", read1);
+    read2 = Wire.read();
+    read2 += Wire.read() << 8;
+    read2 += Wire.read() << 16;
+    read2 += Wire.read() << 24;
+    Serial.printf("read2 %d\n", read2);
+  }
+  interrupts();
+  FlexiTimer2::start();
+  if (read2 != old_read)
+  {
+    Serial.println("stop");
+    Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 0);
+    Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 900);
+    delay(5000);
+    Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 400);
+  }
+  old_read = read2;
+Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
+*/
+
+  // Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_RIGHT, 3000);
+  //射出機構試し打ち
+  if (Serial.available() > 0)
+  {
+    if (Serial.read() == '\n')
+    {
+      Serial.println("fire");
+      //      Machine::arrow(6, 7, 1, 2, 4500, 0, 850);
+      Machine::canonnShot(MachineConfig::Canonn::RIGHT, 1950);
+      Serial8.flush();
+      Serial.println("done");
+    }
+  }
+  // Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_LEFT, -500);;
+  delay(20);
 }
 #endif
