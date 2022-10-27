@@ -14,8 +14,12 @@ namespace Machine
     extern int angle_canonn_right;
     extern int angle_canonn_left;
 
+    extern MachineConfig::Canonn::SELECT canonn_status;
+
     // millsec 5000
     void arrow(const int winding_motor, const int weel_motor, const int servo_motor, const int SW_number, const int milli_sec, const int servo_winding_arg, const int servo_stop_arg);
+    //void canonnShot(MachineConfig::Canonn::SELECT select, uint16_t timer);
+    void canonnShot(int select, uint16_t timer);
 
     void wheel();
 
@@ -35,5 +39,7 @@ namespace Machine
     //ステータス初期化
     void statusInit(uint8_t enable_number);
 
+    //    void readI2CSW(bool data[2]);
     uint8_t checkStatus();
+    void readI2CSW(bool (&data)[2]);
 }

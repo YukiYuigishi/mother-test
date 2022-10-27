@@ -2,6 +2,8 @@
 
 namespace Machine
 {
+    //主砲切り替え
+    MachineConfig::Canonn::SELECT canonn_status = MachineConfig::Canonn::RIGHT;
 
     uint8_t machine_status[100] = {0};
     Pid::PidArg angle_pid_right(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, MachineConfig::Canonn::ANGLE_LOLI_RIGHT, pidConfig[0]);
@@ -13,9 +15,10 @@ namespace Machine
         {300, 0.1, 0},
         {3, 0, 0},
     };
+
     void arrow(const int winding_motor, const int weel_motor, const int servo_motor, const int SW_number, const int milli_sec, const int servo_winding_arg, const int servo_stop_arg)
     {
-        constexpr int power = 2040;
+        constexpr int power = 3000;
         //事前の回転
         Driver::MDsetSpeed(winding_motor, 50);
         // 巻取り用モーターの加速まち
@@ -26,8 +29,20 @@ namespace Machine
         // millisec 500000
 
         delay(milli_sec);
-        Driver::MDsetSpeed(winding_motor, -90);
-        delay(500);
+        Driver::MDsetSpeed(winding_motor, 200);
+        // real
+        Serial.printf("sw2 %d\n", Driver::SW[2]);
+        Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 330);
+        delay(400);
+        while (!Driver::SW[2])
+        {
+            Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
+        }
+        Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 0);
+
+        //固定
+        Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 1700);
+        delay(400);
         // run weel
         /*
         while (Driver::SW[1])
@@ -42,6 +57,15 @@ namespace Machine
         Driver::MDsetSpeed(winding_motor, -100);
         Driver::servoSetAngle(servo_motor, servo_stop_arg);
         Driver::MDsetSpeed(winding_motor, 0);
+
+        // ホイール動かす
+        Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 400);
+        while (Driver::SW[2])
+        {
+            Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
+        }
+        Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 0);
+        Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 1700);
         delay(500);
 
         /*
@@ -53,6 +77,90 @@ namespace Machine
           */
     }
 
+    // void canonnShot(MachineConfig::Canonn::SELECT select, uint16_t timer)
+    void canonnShot(int select, uint16_t timer)
+    {
+        Serial.println("start canonnn");
+        using namespace MachineConfig;
+
+        switch (select)
+        {
+        //        case MachineConfig::Canonn::RIGHT:
+        case 0:
+            //+が巻取り方向
+            constexpr int hold_power = 90;
+            constexpr int slow_start_power_right = 50;
+            constexpr int away_power_right = -100;
+            //事前の回転
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_RIGHT, slow_start_power_right);
+            // 巻取り用モーターの加速まち
+            delay(50);
+            //サーボで継手に接続
+            Driver::servoSetAngle(Canonn::WINDING_SERVO_RIGHT, Canonn::WINDING_LOCK_SERVO_ANGLE_RIGHT[0]);
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_RIGHT, Canonn::WINDING_POWER_RIGHT); //巻取り delay
+            // millisec 500000
+
+            delay(timer);
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_RIGHT, hold_power);
+            //装填待ち
+            delay(500);
+            // run weel
+            /*
+            while (Driver::SW[1])
+            {
+                Driver::MDsetSpeed(6, 300);
+            }
+            */
+            // weel();
+
+            // 射出
+            Serial.println("right ban");
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_RIGHT, away_power_right);
+            Driver::servoSetAngle(Canonn::WINDING_SERVO_RIGHT, Canonn::WINDING_LOCK_SERVO_ANGLE_RIGHT[1]);
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_RIGHT, 0);
+            delay(500);
+            break;
+
+//        case MachineConfig::Canonn::LEFT:
+case 1:
+            //-が巻取り方向
+            constexpr int hold_power_left = -90;
+            constexpr int slow_start_power_left = -50;
+            constexpr int away_power_left = 100;
+            //事前の回転
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_LEFT, slow_start_power_left);
+            // 巻取り用モーターの加速まち
+            delay(50);
+            //サーボで継手に接続
+            Driver::servoSetAngle(Canonn::WINDING_SERVO_LEFT, Canonn::WINDING_LOCK_SERVO_ANGLE_LEFT[0]);
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_LEFT, Canonn::WINDING_POWER_LEFT); //巻取り delay
+            // millisec 500000
+
+            delay(timer);
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_LEFT, hold_power_left);
+            //装填待ち
+            delay(500);
+            // run weel
+            /*
+            while (Driver::SW[1])
+            {
+                Driver::MDsetSpeed(6, 300);
+            }
+            */
+            // weel();
+
+            // 射出
+            Serial.println("left ban");
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_LEFT, away_power_left);
+            Driver::servoSetAngle(Canonn::WINDING_SERVO_LEFT, Canonn::WINDING_LOCK_SERVO_ANGLE_LEFT[1]);
+            Driver::MDsetSpeed(Canonn::WINDING_MOTOR_LEFT, 0);
+            delay(500);
+            break;
+        default:
+            Serial.println("shot error");
+            break;
+        }
+    }
     void wheel()
     {
 
@@ -239,5 +347,8 @@ namespace Machine
             Driver::segDriver(99);
             Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
         }
+    }
+    void readI2CSW(bool (&data)[2])
+    {
     }
 }
