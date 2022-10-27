@@ -77,16 +77,14 @@ namespace Machine
           */
     }
 
-    // void canonnShot(MachineConfig::Canonn::SELECT select, uint16_t timer)
-    void canonnShot(int select, uint16_t timer)
+    void canonnShot(MachineConfig::Canonn::SELECT select, uint16_t timer)
     {
         Serial.println("start canonnn");
         using namespace MachineConfig;
 
         switch (select)
         {
-        //        case MachineConfig::Canonn::RIGHT:
-        case 0:
+        case MachineConfig::Canonn::RIGHT:
             //+が巻取り方向
             constexpr int hold_power = 90;
             constexpr int slow_start_power_right = 50;
@@ -121,8 +119,7 @@ namespace Machine
             delay(500);
             break;
 
-//        case MachineConfig::Canonn::LEFT:
-case 1:
+        case MachineConfig::Canonn::LEFT:
             //-が巻取り方向
             constexpr int hold_power_left = -90;
             constexpr int slow_start_power_left = -50;
