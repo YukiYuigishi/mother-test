@@ -58,14 +58,17 @@ void loop()
   switch (Machine::canonn_status)
   {
   case MachineConfig::Canonn::RIGHT:
-    /* code */
+  {
     Driver::illumination(0, 0, 0xFF, 0);
     Serial.println("Right Canonn");
     break;
+  }
   case MachineConfig::Canonn::LEFT:
+  {
     Driver::illumination(0xFF, 0, 0, 0);
     Serial.println("Left Canonn");
     break;
+  }
   default:
     break;
   }
@@ -181,7 +184,7 @@ void loop()
     if (controller.circle)
     {
       Serial.println("fire");
-      //Machine::arrow(6, 7, 1, 2, 4300, 0, 850);
+      // Machine::arrow(6, 7, 1, 2, 4300, 0, 850);
       Machine::canonnShot(MachineConfig::Canonn::RIGHT, 1950);
       Serial8.flush();
       Serial.println("done");

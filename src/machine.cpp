@@ -85,6 +85,8 @@ namespace Machine
         switch (select)
         {
         case MachineConfig::Canonn::RIGHT:
+        {
+
             //+が巻取り方向
             constexpr int hold_power = 150;
             constexpr int slow_start_power_right = 50;
@@ -118,8 +120,9 @@ namespace Machine
             Driver::MDsetSpeed(Canonn::WINDING_MOTOR_RIGHT, 0);
             delay(500);
             break;
-
+        }
         case MachineConfig::Canonn::LEFT:
+        {
             //-が巻取り方向
             constexpr int hold_power_left = -90;
             constexpr int slow_start_power_left = -50;
@@ -152,7 +155,8 @@ namespace Machine
             Driver::servoSetAngle(Canonn::WINDING_SERVO_LEFT, Canonn::WINDING_LOCK_SERVO_ANGLE_LEFT[1]);
             Driver::MDsetSpeed(Canonn::WINDING_MOTOR_LEFT, 0);
             delay(500);
-            break;
+        }
+        break;
         default:
             Serial.println("shot error");
             break;
