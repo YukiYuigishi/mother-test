@@ -38,7 +38,6 @@ namespace Machine
     //ステータス初期化
     void statusInit(uint8_t enable_number);
 
-    //    void readI2CSW(bool data[2]);
     uint8_t checkStatus();
-    void readI2CSW(bool (&data)[2]);
+    inline void readI2CLoli(int (&data)[2]);
 }

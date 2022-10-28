@@ -364,7 +364,25 @@ namespace Machine
             Serial.println("LEFT STOP");
         }
     }
-    void readI2CSW(bool (&data)[2])
+    inline void readI2CLoli(int (&data)[2])
     {
+        noInterrupts();
+        FlexiTimer2::stop();
+        Wire.requestFrom(0x0b, 8);
+        if (Wire.available() > 0)
+        {
+            data[0] = Wire.read();
+            data[0] += Wire.read() << 8;
+            data[0] += Wire.read() << 16;
+            data[0] += Wire.read() << 24;
+            Serial.printf("read1 %d\n", data[0]);
+            data[1] = Wire.read();
+            data[1] += Wire.read() << 8;
+            data[1] += Wire.read() << 16;
+            data[1] += Wire.read() << 24;
+            Serial.printf("read2 %d\n", data[1]);
+        }
+        interrupts();
+        FlexiTimer2::start();
     }
 }

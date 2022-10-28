@@ -4,3 +4,6 @@
 [submodule "lib/Ps3Decoder"]
 	path = lib/Ps3Decoder
 	url = git@github.com:KurumeNCT-Robocon/Ps3Decoder.git
+[submodule "lib/Ps3DecoderNa"]
+	path = lib/Ps3DecoderNa
+	url = git@github.com:KurumeNCT-Robocon/Ps3DecoderNa.git
