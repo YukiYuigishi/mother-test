@@ -80,21 +80,21 @@ namespace MachineConfig
         //仰角　ロリコン
         constexpr LOLIID ANGLE_LOLI_RIGHT = 8;
         //仰角　ロリコン
-        constexpr LOLIID ANGLE_LOLI_LEFT = 0;
+        constexpr LOLIID ANGLE_LOLI_LEFT = 9;
 
         //仰角 リミットスイッチ前 右
         constexpr SWID ANGLE_LIMIT_SW_RIGHT_F = 1;
         //仰角 リミットスイッチ後 右
-        constexpr SWID ANGLE_LIMIT_SW_RIGHT_B = 0;
+        constexpr SWID ANGLE_LIMIT_SW_RIGHT_B = 2;
         //仰角 リミットスイッチ前 左
-        constexpr SWID ANGLE_LIMIT_SW_LEFT_F = 0;
+        constexpr SWID ANGLE_LIMIT_SW_LEFT_F = 5;
         //仰角 リミットスイッチ後 左
-        constexpr SWID ANGLE_LIMIT_SW_LEFT_B = 0;
+        constexpr SWID ANGLE_LIMIT_SW_LEFT_B = 6;
 
         //仰角上げ上限 右
-        constexpr int ANGLE_MOTOR_LIMIT_RIGHT = 168;
+        constexpr int ANGLE_MOTOR_LIMIT_RIGHT = 150;
         //仰角上げ上限 左
-        constexpr int ANGLE_MOTOR_LIMIT_LEFT = 0;
+        constexpr int ANGLE_MOTOR_LIMIT_LEFT = 143;
 
         /*巻取り*/
         //ワイヤーの巻取り 右
@@ -116,17 +116,22 @@ namespace MachineConfig
         //装填機構固定用サーボ 右
         constexpr int WHEEL_LOCK_SERVO_RIGHT = 2;
         //装填機構固定用サーボ 左
-        constexpr int WHEEL_LOCK_SERVO_LEFT = 0;
+        constexpr int WHEEL_LOCK_SERVO_LEFT = 4;
+
+        //装填機構固定用サーボ [free , lock]
+        constexpr int WHEEL_LOCK_SERVO_ANGLE_RIGHT[2] = {330, 850};
+        //装填機構固定用サーボ 左 [free, lock]
+        constexpr int WHEEL_LOCK_SERVO_ANGLE_LEFT[2] = {200, 850};
 
         //巻取り サーボ 右
         constexpr int WINDING_SERVO_RIGHT = 1;
         //巻取り サーボ 左
-        constexpr int WINDING_SERVO_LEFT = 0;
+        constexpr int WINDING_SERVO_LEFT = 3;
 
         //巻取り サーボ 右 [free , lock] [0, 90]
         constexpr int WINDING_LOCK_SERVO_ANGLE_RIGHT[2] = {0, 850};
         //巻取り サーボ 左 角度 [free , lock] [0, 90]
-        constexpr int WINDING_LOCK_SERVO_ANGLE_LEFT[2] = {0};
+        constexpr int WINDING_LOCK_SERVO_ANGLE_LEFT[2] = {0, 420};
     };
 }; // namespace MachineConfig
 

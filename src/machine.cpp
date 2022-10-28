@@ -181,34 +181,47 @@ namespace Machine
         Driver::MDsetSpeed(6, 0);
     }
 
-    void cannonnInit(int right_md_port, int right_sw_port, int right_loli_port, int left_md_port, int left_sw_port, int left_loli_port)
+    void cannonnInit()
     {
+        int right_md_port = MachineConfig::Canonn::ANGLE_MOTOR_RIGHT;
+        int right_sw_port = MachineConfig::Canonn::ANGLE_LIMIT_SW_RIGHT_F;
+        int right_loli_port = MachineConfig::Canonn::ANGLE_LOLI_RIGHT;
+        int left_md_port = MachineConfig::Canonn::ANGLE_MOTOR_LEFT;
+        int left_sw_port = MachineConfig::Canonn::ANGLE_LIMIT_SW_LEFT_F;
+        int left_loli_port = MachineConfig::Canonn::ANGLE_LOLI_LEFT;
 
+        //仰角下げ
         constexpr int right_down_speed = -400;
-        constexpr int left_down_speed = 400;
+        constexpr int left_down_speed = -400;
 
         // 仰角下げ
         Driver::MDsetSpeed(right_md_port, right_down_speed);
         Driver::MDsetSpeed(left_md_port, left_down_speed);
 
-        uint8_t status = 0;
-        while (status < 2)
+        bool right_status = false;
+        bool left_status = false;
+        while (!right_status || !left_status)
         {
             if (Driver::SW[right_sw_port])
             {
+                right_status = true;
+                Driver::lolicon_value[right_loli_port] = 0;
                 Driver::MDsetSpeed(right_md_port, 0);
-                status++;
             }
 
             if (Driver::SW[left_sw_port])
             {
+                left_status = true;
+                Driver::lolicon_value[left_loli_port] = 0;
                 Driver::MDsetSpeed(left_md_port, 0);
-                status++;
             }
         }
 
-        Driver::lolicon_value[right_loli_port] = 0;
-        Driver::lolicon_value[left_loli_port] = 0;
+        Driver::MDsetSpeed(right_md_port, 400);
+        Driver::MDsetSpeed(left_md_port, 400);
+        delay(100);
+        Driver::MDsetSpeed(right_md_port, 0);
+        Driver::MDsetSpeed(left_md_port, 0);
         Serial.println("Canonn Init");
         return;
     }
@@ -311,9 +324,9 @@ namespace Machine
         {
             Serial.println("ANGLE_LIMIT_SW_LEFT_F");
             //定数の300をどうにか白
-            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, -400);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_LEFT, 400);
             delay(100);
-            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_LEFT, 0);
         }
         /*
 
@@ -342,11 +355,13 @@ namespace Machine
         {
             Driver::segDriver(99);
             Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
+            Serial.println("RIGHT STOP");
         }
         if (Driver::SW[Canonn::ANGLE_LIMIT_SW_LEFT_B] || abs(Driver::lolicon_value[Canonn::ANGLE_LOLI_LEFT]) > Canonn::ANGLE_MOTOR_LIMIT_LEFT)
         {
             Driver::segDriver(99);
-            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_RIGHT, 0);
+            Driver::MDsetSpeed(Canonn::ANGLE_MOTOR_LEFT, 0);
+            Serial.println("LEFT STOP");
         }
     }
     void readI2CSW(bool (&data)[2])

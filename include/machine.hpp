@@ -28,7 +28,7 @@ namespace Machine
     // void canonnElevationAngleLeft(int md_port, int canonn_angle) {}
 
     //主砲初期化
-    void cannonnInit(int right_md_port, int right_sw_port, int right_loli_port, int left_md_port, int left_sw_port, int left_loli_port);
+    void cannonnInit();
 
     //範囲外検知
     void checkCanonnFront();

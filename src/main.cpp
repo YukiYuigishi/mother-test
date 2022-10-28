@@ -7,7 +7,7 @@
 #include <pid_test.hpp>
 #include <array>
 #define DEBUG 1
-constexpr bool undercarriage_en = 1;
+constexpr bool undercarriage_en = 0;
 constexpr bool canonn_en = 1;
 // 0 is dualshock3 bluetooth, 1 is lazurite controller for Nachan protocol, 2 is lazurite controller for Yuki Protocol
 constexpr int controller_en = 0;
@@ -32,6 +32,8 @@ void setup()
 
   if (canonn_en)
   {
+    // Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, 400);
+    /*
     Driver::MDsetSpeed(5, -450);
 
     while (!Driver::SW[1])
@@ -41,6 +43,9 @@ void setup()
     Driver::MDsetSpeed(5, 400);
     delay(150);
     Driver::MDsetSpeed(5, 0);
+    */
+
+    Machine::cannonnInit();
   }
   //固定
   //  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 1700);
@@ -59,13 +64,13 @@ void loop()
   {
   case MachineConfig::Canonn::RIGHT:
   {
-    Driver::illumination(0, 0, 0xFF, 0);
+    Driver::illumination(0x0, 0xFF, 0x0, 0);
     Serial.println("Right Canonn");
     break;
   }
   case MachineConfig::Canonn::LEFT:
   {
-    Driver::illumination(0xFF, 0, 0, 0);
+    Driver::illumination(0xFF, 0x0, 0x0, 0);
     Serial.println("Left Canonn");
     break;
   }
@@ -114,7 +119,7 @@ void loop()
         Serial.println("Right up");
         break;
       case MachineConfig::Canonn::LEFT:
-        Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, -400);
+        Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, 400);
         Serial.println("Left up");
         break;
       }
@@ -141,7 +146,7 @@ void loop()
         Serial.println("Right down");
         break;
       case MachineConfig::Canonn::LEFT:
-        Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, 400);
+        Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, -400);
         Serial.println("Left down");
         break;
       }
@@ -155,7 +160,8 @@ void loop()
     //仰角停止
     else
     {
-      Driver::MDsetSpeed(5, 0);
+      Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, 0);
+      Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_LEFT, 0);
     }
     // Machine::canonnAngleSet(MachineConfig::Canonn::RIGHT, -153);
 
@@ -606,17 +612,52 @@ Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
 
   // Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_RIGHT, 3000);
   //射出機構試し打ち
+  /*
   if (Serial.available() > 0)
   {
     if (Serial.read() == '\n')
     {
       Serial.println("fire");
       //      Machine::arrow(6, 7, 1, 2, 4500, 0, 850);
-      Machine::canonnShot(MachineConfig::Canonn::RIGHT, 1950);
+      Machine::canonnShot(MachineConfig::Canonn::LEFT, 1950);
       Serial8.flush();
       Serial.println("done");
     }
   }
+  */
+  /*
+   Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_LEFT, MachineConfig::Canonn::WHEEL_LOCK_SERVO_ANGLE_LEFT[0]);
+   Serial.println("free");
+   delay(1000);
+   Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_LEFT, MachineConfig::Canonn::WHEEL_LOCK_SERVO_ANGLE_LEFT[1]);
+   Serial.println("lock");
+   delay(1000);
+
+ */
+
+  Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, 400);
+  Serial.printf("loli 8 %d\n", Driver::lolicon_value[MachineConfig::Canonn::ANGLE_LOLI_RIGHT]);
+  while (Driver::SW[MachineConfig::Canonn::ANGLE_LIMIT_SW_RIGHT_B])
+  {
+    Serial.printf("loli 9 %d\n", Driver::lolicon_value[MachineConfig::Canonn::ANGLE_LOLI_RIGHT]);
+    Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, 0);
+  }
+  /*
+  if (Driver::lolicon_value[MachineConfig::Canonn::ANGLE_LOLI_LEFT] > 143)
+  {
+    Serial.printf("loli 8 %d\n", Driver::lolicon_value[MachineConfig::Canonn::ANGLE_LOLI_RIGHT]);
+    Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, 0);
+  }
+  */
+
+  /*
+  Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_LEFT, 850);
+  Serial.println("850");
+  delay(1000);
+  Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_LEFT, 1700);
+  Serial.println("1700");
+  delay(1000);
+  */
   // Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_LEFT, -500);;
   delay(20);
 }
