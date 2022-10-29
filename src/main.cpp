@@ -8,8 +8,8 @@
 #include <pid_test.hpp>
 #include <array>
 #define DEBUG 0
-constexpr bool undercarriage_en = 0;
-constexpr bool canonn_en = 0;
+constexpr bool undercarriage_en = 1;
+constexpr bool canonn_en = 1;
 // 0 is dualshock3 bluetooth, 1 is lazurite controller for Nachan protocol, 2 is lazurite controller for Yuki Protocol
 constexpr int controller_en = 0;
 
@@ -102,10 +102,12 @@ void loop()
     if (controller.right)
     {
       Machine::canonn_status = MachineConfig::Canonn::RIGHT;
+      Serial.println("canonn change to right");
     }
     if (controller.left)
     {
       Machine::canonn_status = MachineConfig::Canonn::LEFT;
+      Serial.println("canonn change to left");
     }
 
     //仰角上げ
@@ -176,14 +178,15 @@ void loop()
     // 射出
 
     Serial.printf("circle %d\n", controller.circle);
-    /* きーぼーど　入力
+    // きーぼーど　入力
+    /*
     if (Serial.available() > 0)
     {
       if (Serial.read() == '\n')
       {
         Serial.println("fire");
-        / Machine::arrow(6, 7, 1, 2, 4500, 0, 850);
-        Machine::canonnShot(MachineConfig::Canonn::RIGHT, 4500);
+        /// Machine::arrow(6, 7, 1, 2, 4500, 0, 850);
+        Machine::canonnShot(MachineConfig::Canonn::RIGHT);
         Serial8.flush();
         Serial.println("done");
       }
@@ -216,7 +219,7 @@ void loop()
   {
 
     int controller_offset = 11;
-    int motor_speed = sqrt(pow(controller.rx, 2) + pow(controller.ry, 2)) * 1.5 / 2;
+    int motor_speed = sqrt(pow(controller.rx, 2) + pow(controller.ry, 2)) * 1.5 / 6;
     Serial.printf("rx:%d\n", controller.rx);
     Serial.printf("ry:%d\n", -controller.ry);
     if ((abs(controller.rx) > controller_offset) ||
@@ -803,8 +806,11 @@ while (!controller.l1)
   // check readI2Cloli
   //  int data[2] = {0};
   //  Machine::readI2CLoli(data);
-  Serial.printf("right  %d\n", Driver::SW[MachineConfig::Canonn::WINDING_LIMITSW_RIGHT]);
-  Serial.printf("left %d\n", Driver::SW[MachineConfig::Canonn::WINDING_LIMITSW_LEFT]);
+  //  Serial.printf("right  %d\n", Driver::SW[MachineConfig::Canonn::WINDING_LIMITSW_RIGHT]);
+  //  Serial.printf("left %d\n", Driver::SW[MachineConfig::Canonn::WINDING_LIMITSW_LEFT]);
+  //  analogWrite(0, 3900);
+//  Machine::canonnShot(MachineConfig::Canonn::RIGHT);
+analogWrite(0,5000);
 
   delay(20);
 }
