@@ -18,7 +18,7 @@ namespace Machine
 
     // millsec 5000
     void arrow(const int winding_motor, const int weel_motor, const int servo_motor, const int SW_number, const int milli_sec, const int servo_winding_arg, const int servo_stop_arg);
-    void canonnShot(MachineConfig::Canonn::SELECT select, uint16_t timer);
+    void canonnShot(MachineConfig::Canonn::SELECT select);
 
     void wheel();
 

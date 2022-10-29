@@ -7,8 +7,8 @@
 #include <omni.hpp>
 #include <pid_test.hpp>
 #include <array>
-#define DEBUG 1
-constexpr bool undercarriage_en = 1;
+#define DEBUG 0
+constexpr bool undercarriage_en = 0;
 constexpr bool canonn_en = 0;
 // 0 is dualshock3 bluetooth, 1 is lazurite controller for Nachan protocol, 2 is lazurite controller for Yuki Protocol
 constexpr int controller_en = 0;
@@ -24,7 +24,7 @@ void setup()
   //  Pid::target[0] = 10 * 2 * M_PI;
   //  Pid::target[0] = 20;
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("やあ、アリアルさんだよ。");
   Serial.printf("足回り %d\n", (int)undercarriage_en);
   Serial.printf("射出機構 %d\n", (int)canonn_en);
@@ -47,10 +47,10 @@ void setup()
     */
 
     Machine::cannonnInit();
+    Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 400);
   }
   //固定
   //  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 1700);
-  Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 400);
 }
 
 #if DEBUG
@@ -62,6 +62,18 @@ void loop()
   // Serial.printf("angle %d\n", Machine::angle_canonn_right);
   // static Ps3Decoder::Data controller = {0};
   static Ps3Decoder::Data controller = {0};
+  // dualshock3 bluetooth
+  if (controller_en == 0)
+  {
+    //コントローラ受信
+    if (Serial7.available() > 12)
+    {
+      uint8_t res[12] = {0};
+      Serial7.readBytes(res, 12);
+      Ps3Decoder::decode(controller, res);
+    }
+  }
+
   switch (Machine::canonn_status)
   {
   case MachineConfig::Canonn::RIGHT:
@@ -78,18 +90,6 @@ void loop()
   }
   default:
     break;
-  }
-
-  // dualshock3 bluetooth
-  if (controller_en == 0)
-  {
-    //コントローラ受信
-    if (Serial7.available() > 12)
-    {
-      uint8_t res[12] = {0};
-      Serial7.readBytes(res, 12);
-      Ps3Decoder::decode(controller, res);
-    }
   }
 
   // nachan protocol
@@ -175,8 +175,8 @@ void loop()
 
     // 射出
 
-    Serial.printf("circle %d\n", controller.square);
-    /*
+    Serial.printf("circle %d\n", controller.circle);
+    /* きーぼーど　入力
     if (Serial.available() > 0)
     {
       if (Serial.read() == '\n')
@@ -189,12 +189,20 @@ void loop()
       }
     }
     */
+    //押しすぎ対処
+    static int circle_check = 0;
     if (controller.circle)
     {
+      circle_check += 1;
+    }
+    if (circle_check > 3)
+    {
+      // delay(1000);
       Serial.println("fire");
       // Machine::arrow(6, 7, 1, 2, 4300, 0, 850);
-      Machine::canonnShot(MachineConfig::Canonn::RIGHT, 1950);
-      // Serial8.flush();
+      Machine::canonnShot(Machine::canonn_status);
+      Serial8.flush();
+      circle_check = 0;
       Serial.println("done");
     }
   }
@@ -203,76 +211,69 @@ void loop()
   // 足回り駆動///////////////////////////////////
   // offset以下の入力を無効化
 
-  constexpr int arrow_key = 0;
+  // constexpr int arrow_key = 0;
   if (undercarriage_en)
   {
 
-    if (!arrow_key)
+    int controller_offset = 11;
+    int motor_speed = sqrt(pow(controller.rx, 2) + pow(controller.ry, 2)) * 1.5 / 2;
+    Serial.printf("rx:%d\n", controller.rx);
+    Serial.printf("ry:%d\n", -controller.ry);
+    if ((abs(controller.rx) > controller_offset) ||
+        (abs(controller.ry) > controller_offset))
     {
-
-      int controller_offset = 5;
-      int motor_speed = sqrt(pow(controller.rx, 2) + pow(controller.ry, 2)) * 1.5 / 2;
-      Serial.printf("rx:%d\n", controller.rx);
-      Serial.printf("ry:%d\n", -controller.ry);
-      if ((abs(controller.rx) > controller_offset) ||
-          (abs(controller.ry) > controller_offset))
-      {
-        //正常系
-        // double theta = atan2(-controller.ry, controller.rx);
-        //上下左右反転系
-        double theta = atan2(controller.ry, -controller.rx);
-        Serial.printf("theta %lf\n", theta);
-        Omni::run(motor_speed, theta);
-      }
-      //  Omni::run(500, M_PI / 4);
-      // Serial.println(controller.start);
-
-      Serial.printf("r1 %d\n", controller.r1);
-      Serial.printf("l1 %d\n", controller.l1);
-      if (controller.r1)
-      {
-        Omni::rotation(250, true);
-      }
-      if (controller.l1)
-      {
-        Omni::rotation(250, false);
-      }
-      else
-      {
-
-        Omni::run(0, 0);
-      }
+      //正常系
+      // double theta = atan2(-controller.ry, controller.rx);
+      //上下左右反転系
+      double theta = atan2(controller.ry, -controller.rx);
+      Serial.printf("theta %lf\n", theta);
+      Omni::run(motor_speed, theta);
     }
     else
     {
-      if (controller.right)
-      {
-        Omni::run(500, 0);
-      }
-      else if (controller.up)
-      {
-        Omni::run(500, M_PI / 2);
-      }
-      else if (controller.left)
-      {
-
-        Omni::run(500, M_PI);
-      }
-      else if (controller.down)
-      {
-        Omni::run(500, M_PI / 2 * 3);
-      }
-      else
-      {
-
-        Omni::run(0, 0);
-      }
+      Omni::run(0, 0);
     }
-  }
-  ////////////////////////////////////////////////
+    //  Omni::run(500, M_PI / 4);
+    // Serial.println(controller.start);
 
+    Serial.printf("r1 %d\n", controller.r1);
+    Serial.printf("l1 %d\n", controller.l1);
+    if (controller.r1)
+    {
+      Omni::rotation(250, true);
+    }
+    if (controller.l1)
+    {
+      Omni::rotation(250, false);
+    }
+    /*
+    if (controller.right)
+    {
+      Omni::run(500, 0);
+    }
+    else if (controller.up)
+    {
+      Omni::run(500, M_PI / 2);
+    }
+    else if (controller.left)
+    {
+
+      Omni::run(500, M_PI);
+    }
+    else if (controller.down)
+    {
+      Omni::run(500, M_PI / 2 * 3);
+    }
+    else
+    {
+
+      Omni::run(0, 0);
+    }
+    */
+  }
   delay(20);
 }
+////////////////////////////////////////////////
 
 #else
 // millsec 5000
@@ -314,6 +315,7 @@ void arrow(int winding_motor, int weel_motor, int milli_sec,
 
 void loop()
 {
+  /*
   static float imu_eular_x[10] = {0};
   for (float *i = imu_eular_x; i != imu_eular_x + 9; i++)
   {
@@ -321,6 +323,7 @@ void loop()
   }
 
   imu_eular_x[9] = Driver::IMU_eular_x;
+  */
   //  double target_speed = 5 * TWO_PI;
   // motor.SetTarget(target_speed);
 
@@ -610,7 +613,15 @@ while (!controller.l1)
 
   //  Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_RIGHT, 5000); //巻取り delay
 
-  /* 装填機構
+  /*
+    int data[2] = {0};
+    Machine::readI2CLoli(data);
+    Serial.printf("%d\n", data[0]);
+    Serial.printf("%d\n", data[1]);
+    */
+
+  // 装填機構
+  /* i2c loli read
   static uint32_t old_read = 0;
   uint32_t read1 = 0;
   uint32_t read2 = 0;
@@ -619,30 +630,31 @@ while (!controller.l1)
   Wire.requestFrom(0x0b, 8);
   if (Wire.available() > 0)
   {
+    Serial.println("test");
     read1 = Wire.read();
     read1 += Wire.read() << 8;
     read1 += Wire.read() << 16;
     read1 += Wire.read() << 24;
-    Serial.printf("read1 %d\n", read1);
     read2 = Wire.read();
     read2 += Wire.read() << 8;
     read2 += Wire.read() << 16;
     read2 += Wire.read() << 24;
-    Serial.printf("read2 %d\n", read2);
   }
   interrupts();
   FlexiTimer2::start();
-  if (read2 != old_read)
-  {
-    Serial.println("stop");
-    Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 0);
-    Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 900);
-    delay(5000);
-    Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 400);
-  }
-  old_read = read2;
-Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
-*/
+  Serial.printf("read1 %d\n", read1);
+  Serial.printf("read2 %d\n", read2);
+  */
+  // if (read2 != old_read)
+  // {
+  ///.println("stop");
+  //   Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 0);
+  //   Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 900);
+  //   delay(5000);
+  //   Driver::servoSetAngle(MachineConfig::Canonn::WHEEL_LOCK_SERVO_RIGHT, 400);
+  // }
+  // old_read = read2;
+  // Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
 
   // Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_RIGHT, 3000);
   //射出機構試し打ち
@@ -708,19 +720,17 @@ Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
 
 */
   //コントローラ受信
+  /*
   static Ps3Decoder::Data controller = {};
   if (Serial7.available() > 12)
   {
     uint8_t res[12] = {0};
     Serial7.readBytes(res, 12);
-    /*
-    for (int i = 0; i < 12; i++)
-    {
-      Serial.println(res[i], BIN);
-    }
-    */
     Ps3Decoder::decode(controller, res);
   }
+
+  // Serial.printf("rx:%d\n", controller.rx);
+  // Serial.printf("ry:%d\n", controller.ry);
   Serial.printf("rx %d\n", controller.rx);
   Serial.printf("ry %d\n", controller.ry);
   Serial.printf("cross %d\n", controller.cross);
@@ -728,7 +738,27 @@ Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
   Serial.printf("down %d\n", controller.down);
   Serial.printf("r1 %d\n", controller.r1);
   Serial.printf("l1 %d\n", controller.l1);
-  Serial.println("-------------");
+  // コントローラデバッグ
+  int controller_offset = 11;
+  Serial.printf("rx:%d\n", controller.rx);
+  Serial.printf("ry:%d\n", controller.ry);
+  int motor_speed = sqrt(pow(controller.rx, 2) + pow(controller.ry, 2)) * 1.5 / 2;
+  if ((abs(controller.rx) > controller_offset) ||
+      (abs(controller.ry) > controller_offset))
+  {
+    //正常系
+    // double theta = atan2(-controller.ry, controller.rx);
+    //上下左右反転系
+    double theta = atan2(controller.ry, -controller.rx);
+    Serial.printf("theta %lf\n", theta);
+    Omni::run(motor_speed, theta);
+  }
+  else
+  {
+    Omni::run(0, 0);
+  }
+
+  */
   //   Machine::readI2CLoli()
   /*
    if (Serial7.available() > 0)
@@ -736,11 +766,46 @@ Driver::MDsetSpeed(MachineConfig::Canonn::WHEEL_MOTOR_RIGHT, 300);
      Serial.println(Serial7.read());
    }
    */
-  //  Omni::run(500, 0);
-  Driver::MDsetSpeed(MachineConfig::Canonn::ANGLE_MOTOR_RIGHT, 400);
-  Machine::checkCanonnBack();
+  /*
+  Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_RIGHT, MachineConfig::Canonn::WINDING_LOCK_SERVO_ANGLE_RIGHT[0]);
+  Serial.println("free");
+  delay(1000);
+  delay(1000);
+  */
+  /* 左主砲ガチャガチャ
+   Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_LEFT, MachineConfig::Canonn::WINDING_LOCK_SERVO_ANGLE_LEFT[1]);
+   Serial.println("lock");
+   Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_LEFT, -2040);
+   delay(1000);
+   Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_LEFT, MachineConfig::Canonn::WINDING_LOCK_SERVO_ANGLE_LEFT[0]);
+   Serial.println("free");
+   Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_LEFT, 1040);
+   delay(100);
 
-  Serial.println("Right up");
-  delay(30);
+   */
+  // delay(2000);
+  // Driver::MDsetSpeed(MachineConfig::Canonn::WINDING_MOTOR_LEFT, -500);
+  // delay(1000);
+
+  /*
+   Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_RIGHT,0 );
+   Serial.println("0");
+   delay(1000);
+   Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_RIGHT,850 );
+   Serial.println("850");
+   delay(1000);
+   Driver::servoSetAngle(MachineConfig::Canonn::WINDING_SERVO_RIGHT, 1700);
+   Serial.println("1700");
+   delay(1000);
+   */
+  // readI2C test
+
+  // check readI2Cloli
+  //  int data[2] = {0};
+  //  Machine::readI2CLoli(data);
+  Serial.printf("right  %d\n", Driver::SW[MachineConfig::Canonn::WINDING_LIMITSW_RIGHT]);
+  Serial.printf("left %d\n", Driver::SW[MachineConfig::Canonn::WINDING_LIMITSW_LEFT]);
+
+  delay(20);
 }
 #endif

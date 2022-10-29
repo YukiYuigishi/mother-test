@@ -77,7 +77,7 @@ namespace Machine
           */
     }
 
-    void canonnShot(MachineConfig::Canonn::SELECT select, uint16_t timer)
+    void canonnShot(MachineConfig::Canonn::SELECT select)
     {
         Serial.println("start canonnn");
         using namespace MachineConfig;
@@ -105,7 +105,11 @@ namespace Machine
             // millisec 500000
 
             Driver::illumination(0xFF, 0xFF, 0xFF, 0);
-            delay(timer);
+            // delay(timer);
+            //リミットスイッチによる停止処理
+            while (!Driver::SW[MachineConfig::Canonn::WINDING_LIMITSW_RIGHT])
+            {
+            }
             //射出合図
             Driver::illumination(0, 0, 0, 0);
             Driver::MDsetSpeed(Canonn::WINDING_MOTOR_RIGHT, hold_power);
@@ -163,7 +167,9 @@ namespace Machine
             // millisec 500000
 
             Driver::illumination(0xFF, 0x00, 0xFF, 0);
-            delay(timer);
+            // delay(timer);
+            while(!Driver::SW[MachineConfig::Canonn::WINDING_LIMITSW_LEFT]){}
+            //リミットスイッチによる停止処理
             Driver::illumination(0, 0, 0, 0);
             Driver::MDsetSpeed(Canonn::WINDING_MOTOR_LEFT, hold_power_left);
             Serial.println("hold");

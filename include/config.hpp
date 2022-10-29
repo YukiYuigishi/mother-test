@@ -107,6 +107,9 @@ namespace MachineConfig
         //正転(巻取り方向) 左
         constexpr int WINDING_POWER_LEFT = -4000;
 
+        // 発射機構引きけつリミットスイッチ
+        constexpr SWID WINDING_LIMITSW_RIGHT = 3;
+        constexpr SWID WINDING_LIMITSW_LEFT = 7;
         /*装填機構*/
         //装填機構回転 右
         constexpr int WHEEL_MOTOR_RIGHT = 7;
@@ -125,13 +128,14 @@ namespace MachineConfig
 
         //巻取り サーボ 右
         constexpr int WINDING_SERVO_RIGHT = 1;
-        //巻取り サーボ 左
+        //巻取り サーボ 左RIGHTRIGHTRIGHTRIGHT
         constexpr int WINDING_SERVO_LEFT = 3;
 
-        //巻取り サーボ 右 [free , lock] [0, 90]
-        constexpr int WINDING_LOCK_SERVO_ANGLE_RIGHT[2] = {0, 850};
-        //巻取り サーボ 左 角度 [free , lock] [0, 90]
-        constexpr int WINDING_LOCK_SERVO_ANGLE_LEFT[2] = {0, 420};
+        //どっちだ？？？
+        //巻取り サーボ 右 たぶん[lock , free] [0, 90]
+        constexpr int WINDING_LOCK_SERVO_ANGLE_RIGHT[2] = {0, 250};
+        //巻取り サーボ 左 角度 [lock , free] [0, 90]
+        constexpr int WINDING_LOCK_SERVO_ANGLE_LEFT[2] = {100, 380};
     };
 }; // namespace MachineConfig
 
