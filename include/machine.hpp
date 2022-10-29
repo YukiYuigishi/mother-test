@@ -39,5 +39,5 @@ namespace Machine
     void statusInit(uint8_t enable_number);
 
     uint8_t checkStatus();
-    inline void readI2CLoli(int (&data)[2]);
+    void readI2CLoli(int (&data)[2]);
 }
